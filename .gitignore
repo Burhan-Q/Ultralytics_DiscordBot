@@ -8,6 +8,7 @@ __pycache__/
 
 # VSCODE
 *.code-workspace
+.vscode/
 
 # MEDIA
 *.mp4
