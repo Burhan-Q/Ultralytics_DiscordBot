@@ -11,7 +11,9 @@ import cv2 as cv
 import numpy as np
 import yaml
 
-COLORS_FILE = Path('cfg/colors.yaml')
+from UltralyticsBot import PROJ_ROOT
+
+COLORS_FILE = PROJ_ROOT / 'cfg/colors.yaml'
 
 def hex2bgr(hexcolor) -> tuple[int,int,int]:
     # from /ultralytics/utils/plotting.py#L54

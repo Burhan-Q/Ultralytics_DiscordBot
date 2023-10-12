@@ -1,5 +1,5 @@
 """
-Title: UltralyticsBot
+Title: bot.py
 Author: Burhan Qaddoumi
 Date: 2023-10-10
 
@@ -7,8 +7,6 @@ Requires: discord.py, pyyaml, numpy, requests, opencv-python
 """
 
 import base64
-import json
-import re
 from pathlib import Path
 
 import cv2 as cv
@@ -18,25 +16,23 @@ import requests
 import yaml
 from discord import app_commands
 
-from utils.plotting import nxy2xy, xcycwh2xyxy, draw_all_boxes, select_color
+from UltralyticsBot import PROJ_ROOT
+from UltralyticsBot.utils.plotting import nxy2xy, xcycwh2xyxy, draw_all_boxes, select_color
+from UltralyticsBot.utils.logging import Loggr
 
 # References
 # Discord slash-command: https://stackoverflow.com/questions/71165431/how-do-i-make-a-working-slash-command-in-discord-py
 # Discord library docs: https://discordpy.readthedocs.io/en/stable/
 # Dicord library examples: https://github.com/Rapptz/discord.py/tree/v2.3.2/examples
 
-COLORS_FILE = Path('cfg/colors.yaml')
-ASSETS = Path('assets') # NOTE aim is to use this as fallback when no image is provided
-DEFAULT_INFER = {
-                "confidence": "0.35",
-                "iou": "0.45",
-                "size": "640",
-                "model": "yolov5n",
-                "key": None,
-                "image": None,
-                }
-REQ_ENDPOINT = "https://test.ultralytics.com/detect"
-RESPONSE_KEYS = ('name', 'confidence', 'class', 'xcenter', 'ycenter', 'width', 'height')
+
+# COLORS_FILE = Path('cfg/colors.yaml') # TODO remove after tested
+REQ_CFG = yaml.safe_load((PROJ_ROOT / 'cfg/req.yaml').read_text())
+
+ASSETS = PROJ_ROOT /'assets' # NOTE future, use this as fallback when no image is provided
+DEFAULT_INFER = REQ_CFG['default']
+REQ_ENDPOINT = REQ_CFG['endpoint']
+RESPONSE_KEYS = tuple(REQ_CFG['response'])
 TEMPFILE = 'detect_res.png'
 
 # NOTE unverified bots in < 100 servers will be able to use message content intents, once above 100 servers, bot needs to be verified
@@ -50,14 +46,15 @@ class MyClient(discord.Client):
         """Sync commands, could take upto an hour to show up when bot is in lots of servers"""
         await self.tree.sync()
 
-def hex2bgr(hexcolor) -> tuple[int,int,int]: # https://github.com/ultralytics/ultralytics/blob/main/ultralytics/utils/plotting.py#L54
-    """Conver HEX color strings to BGR color format"""
-    return tuple(int(hexcolor[1 + i:1 + i + 2], 16) for i in (0, 2, 4))[::-1]
+# TODO remove after tested
+# def hex2bgr(hexcolor) -> tuple[int,int,int]: # https://github.com/ultralytics/ultralytics/blob/main/ultralytics/utils/plotting.py#L54
+#     """Conver HEX color strings to BGR color format"""
+#     return tuple(int(hexcolor[1 + i:1 + i + 2], 16) for i in (0, 2, 4))[::-1]
 
-def get_colors() -> tuple[tuple[int,int,int]]:
-    """Load colors for annotations"""
-    hex_colors = yaml.safe_load(Path(COLORS_FILE).read_text())['colors']
-    return tuple(hex2bgr(col) for col in hex_colors)
+# def get_colors() -> tuple[tuple[int,int,int]]:
+#     """Load colors for annotations"""
+#     hex_colors = yaml.safe_load(Path(COLORS_FILE).read_text())['colors']
+#     return tuple(hex2bgr(col) for col in hex_colors)
 
 def get_values(data:dict) -> list:
     """Return values for known response keys"""
@@ -81,6 +78,7 @@ def plot_result(imgbytes:bytes, predictions:list, include_msg:bool=False):
         x1, y1, x2, y2 = tuple(nxy2xy(xcycwh2xyxy(np.array((x, y, w, h))), imH, imW)) # n-xcycwh -> x1y1x2y2
         pred_boxes = np.vstack([pred_boxes, np.array((x1, y1, x2, y2, idx))])
         msg += f'''class:  {cls_name} conf:   {round(conf,3)} index:  {idx} x1y1x2y2: {(x1, y1, x2, y2)}\n'''
+        # TODO remove after tested
         # clr_idx = select_color(idx)
         # _ = cv.rectangle(anno_img, (x1, y1), (x2, y2), COLORS[clr_idx], 3)
 
@@ -114,27 +112,19 @@ def reply_msg(response:requests.models.Response, plot:bool=False, req_img:bytes=
     
     return out
 
-COLORS = get_colors()
+# COLORS = get_colors()
 
 def main(T,H):
     intents = discord.Intents.default()
     intents.message_content = True
-    # client = discord.Client(intents=intents)
+    # client = discord.Client(intents=intents) # TODO remove after tested
     client = MyClient(intents=intents)
-
-    # TODO
-    ## change to get message content URL (probably first one only)
-    ## add formatting for returned message
-    ## figure out how to limit requests per user, per day
-    ## add argument for selecting YOLO model size, image size, confidence threshold, IOU threshold, etc.
-    ## add means to select different weights
-    ## add option for choosing other tasks (as they become available)
-    ## add means to authenticate with HUB account
 
     @client.event
     async def on_ready():
         await client.tree.sync()
         print("Initialized sync")
+        Loggr.info("Initialized client sync")
 
     # TODO
     # change to use default inference with using $predict text in message, that way it's possible to attach file or use image link
@@ -154,7 +144,11 @@ def main(T,H):
             req_dict['key'] = H
             req_dict['image'] = base64.b64encode(image_data).decode()
 
-            response = requests.post(request_url, json=req_dict)
+            try:
+                response = requests.post(request_url, json=req_dict)
+            except Exception as e:
+                Loggr.error(f"Error during request: {e}")
+                await message.channel.send("Error: API request failed")
 
             if response.status_code == 200:
                 preds, reply, success = response.json().values()
@@ -164,10 +158,12 @@ def main(T,H):
                 box_img = discord.File(Path(TEMPFILE))
                 await message.reply("Detections", file=box_img)
                 
-                # cleanup()
+                # cleanup() # TODO find method to attach image data w/o saving to disk
             
             else:
-                await message.channel.send("Error: API call failed")
+                _, reply, success = response.json().values()
+                Loggr.error(f"Response code {response.status_code} with reply {reply} and reason {response.reason}")
+                await message.channel.send("Error: API request failed")
 
     # TODO maybe include @user in response
     @client.tree.command(name='predict')
@@ -190,14 +186,20 @@ def main(T,H):
                 "key": str(H),
                 "image": base64.b64encode(image_data).decode(),
                 }
-        req = requests.post(REQ_ENDPOINT, json=request_dict)
+        try:
+            req = requests.post(REQ_ENDPOINT, json=request_dict)
+        except Exception as e:
+            Loggr.error(f"Error during request: {e}")
+            await interaction.response.send_message("Error: API request failed")
+            
         text, file = reply_msg(req, show, image_data)
         await (interaction.response.send_message(text, file=file) if file is not None else interaction.response.send_message(text))
 
     client.run(T)
 
 if __name__ == '__main__':
-    d = yaml.safe_load(list(Path(__file__).parent.parent.glob("SECRETS/codes.yaml"))[0].read_text())
+    d = yaml.safe_load((PROJ_ROOT / 'SECRETS/codes.yaml').read_text())
     DISCORD_TOKEN = d['apikey']
     HUB_KEY = d['inferkey']
+
     main(DISCORD_TOKEN, HUB_KEY)
