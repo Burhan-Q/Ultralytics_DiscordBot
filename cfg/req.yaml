@@ -1,0 +1,16 @@
+default:
+  confidence: "0.35"
+  iou: "0.45"
+  size: "640"
+  model: "yolov8n"
+  key: null
+  image: null
+endpoint: "https://test.ultralytics.com/detect"
+response:
+  - name
+  - confidence
+  - class
+  - xcenter
+  - ycenter
+  - width
+  - height
