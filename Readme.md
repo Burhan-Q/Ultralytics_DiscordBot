@@ -125,7 +125,7 @@ At present this Discord Bot is only configured to run on a local computer (self-
 
 ### Message
 
-Send a message starting with `$predict` followed by a URL, and `UltralyticsBot` will use the default inference request settings [found here](/cfg/req.yaml) and returns an annotated image result. Only the annotated image is returned.
+Send a message starting with `$predict` followed by a URL for an image, and `UltralyticsBot` will use the default inference request settings [found here](/cfg/req.yaml) and returns **only** an annotated image result.
 
 #### MESSAGE EXAMPLE:
 
@@ -181,11 +181,11 @@ class:  {1} conf:   {2} index:  {3} x1y1x2y2: ({4}, {5}, {6}, {7})
 
 ### Image Links
 
-During testing, links to images that appear to be valid will not work correctly with `UltralyticsBot`. This seems to be an issue with either the content provider of the image, or the method which the bot attempts to fetch the image. 
+During testing, _some_ links to images that appeared to be valid did not work correctly with `UltralyticsBot`. This seems to be an issue with either the content provider of the image, or the method which the bot attempts to fetch the image. 
 
 ### Many Predictions
 
-Images with a large number of objects detected, especially if using small values for `iou` or `conf` arguments with `/predict` will generate too much text for a single message. This error may return a message from the bot `Error: API request failed` or may fail silently.
+Images with a large quantity of objects to detect, especially if using small values for `iou` or `conf` arguments with `/predict`, will generate too much text for a single message. This error may return a message from the bot `Error: API request failed` or may fail silently.
 
 ### Inference Size
 
