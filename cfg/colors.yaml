@@ -1,0 +1,33 @@
+colors:
+  - '#DC143C' # Crimson
+  - '#DB7093' # PaleVioletRed
+  - '#FF7F50' # Coral
+  - '#0000CD' # MediumBlue
+  - '#FFD700' # Gold
+  - '#DDA0DD' # Plum
+  - '#FF8C00' # DarkOrange
+  - '#FF00FF' # Magenta
+  - '#8A2BE2' # BlueViolet
+  - '#4B0082' # Indigo
+  - '#BDB76B' # DarkKhaki
+  - '#7FFF00' # Chartreuse
+  - '#2E8B57' # SeaGreen
+  - '#87CEEB' # SkyBlue
+  - '#66CDAA' # MediumAquamarine
+  - '#00FFFF' # Cyan
+  - '#F5DEB3' # Wheat
+  - '#FF1493' # DeepPink
+  - '#B8860B' # DarkGoldenRod
+  - '#B22222' # FireBrick
+  - '#98FB98' # PaleGreen
+  - '#006400' # DarkGreen
+  - '#008080' # Teal
+  - '#1E90FF' # DodgerBlue
+  - '#800000' # Maroon
+  - '#6495ED' # CornflowerBlue
+  - '#F0FFF0' # HoneyDew
+  - '#FFFFFF' # White
+  - '#C0C0C0' # Silver
+  - '#708090' # SlateGray
+
+# source: https://htmlcolorcodes.com/color-names/
