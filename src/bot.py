@@ -26,7 +26,6 @@ from UltralyticsBot.utils.logging import Loggr
 # Discord library docs: https://discordpy.readthedocs.io/en/stable/
 # Dicord library examples: https://github.com/Rapptz/discord.py/tree/v2.3.2/examples
 
-
 REQ_CFG = yaml.safe_load((PROJ_ROOT / 'cfg/req.yaml').read_text())
 
 ASSETS = PROJ_ROOT /'assets' # NOTE future, use this as fallback when no image is provided
@@ -102,14 +101,6 @@ def reply_msg(response:requests.models.Response,
         result, msg = plot_result(req_img, pred, True)
         
         box_img = attach_file(result)
-        # # NOTE figure out how to skip file save and directly upload from memory
-        # try:
-        #     box_img = discord.File(io.BytesIO(cv.imencode('.png', result)[1]), 'detections.png')
-        #     Loggr.info("Attached from memory")
-        # except:
-        #     _ = cv.imwrite(TEMPFILE, result)
-        #     box_img = discord.File(Path(TEMPFILE))
-        #     Loggr.info("Attached from disk")
 
         out = (msg, box_img)
 
@@ -125,12 +116,9 @@ def reply_msg(response:requests.models.Response,
     
     return out
 
-# COLORS = get_colors()
-
 def main(T,H):
     intents = discord.Intents.default()
     intents.message_content = True
-    # client = discord.Client(intents=intents) # TODO remove after tested
     client = MyClient(intents=intents)
 
     @client.event
@@ -139,8 +127,7 @@ def main(T,H):
         print("Initialized sync")
         Loggr.info("Initialized client sync")
 
-    # TODO
-    # change to use default inference with using $predict text in message, that way it's possible to attach file or use image link
+    # Message starting with `$predict` uses default inference settings
     @client.event
     async def on_message(message):
 
@@ -168,13 +155,6 @@ def main(T,H):
                 result, _ = plot_result(image_data, preds, False)
                 
                 box_img = attach_file(result)
-                # try:
-                #     box_img = discord.File(io.BytesIO(cv.imencode('.png', result)[1]), 'detections.png')
-                #     Loggr.info("Attached from memory")
-                # except:
-                #     _ = cv.imwrite(TEMPFILE, result)
-                #     box_img = discord.File(Path(TEMPFILE))
-                #     Loggr.info("Attached from disk")
 
                 await message.reply("Detections", file=box_img)
                 
@@ -185,7 +165,7 @@ def main(T,H):
                 Loggr.error(f"Response code {response.status_code} with reply {reply} and reason {response.reason}")
                 await message.channel.send("Error: API request failed")
 
-    # TODO maybe include @user in response
+    # Slash-command for predict, allows for keyword parameters
     @client.tree.command(name='predict')
     @app_commands.describe(
         img_url="REQUIRED: Full URL to image",
