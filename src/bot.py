@@ -6,6 +6,7 @@ Date: 2023-10-10
 Requires: discord.py, pyyaml, numpy, requests, opencv-python
 """
 
+import io
 import base64
 from pathlib import Path
 
@@ -26,7 +27,6 @@ from UltralyticsBot.utils.logging import Loggr
 # Dicord library examples: https://github.com/Rapptz/discord.py/tree/v2.3.2/examples
 
 
-# COLORS_FILE = Path('cfg/colors.yaml') # TODO remove after tested
 REQ_CFG = yaml.safe_load((PROJ_ROOT / 'cfg/req.yaml').read_text())
 
 ASSETS = PROJ_ROOT /'assets' # NOTE future, use this as fallback when no image is provided
@@ -46,25 +46,30 @@ class MyClient(discord.Client):
         """Sync commands, could take upto an hour to show up when bot is in lots of servers"""
         await self.tree.sync()
 
-# TODO remove after tested
-# def hex2bgr(hexcolor) -> tuple[int,int,int]: # https://github.com/ultralytics/ultralytics/blob/main/ultralytics/utils/plotting.py#L54
-#     """Conver HEX color strings to BGR color format"""
-#     return tuple(int(hexcolor[1 + i:1 + i + 2], 16) for i in (0, 2, 4))[::-1]
-
-# def get_colors() -> tuple[tuple[int,int,int]]:
-#     """Load colors for annotations"""
-#     hex_colors = yaml.safe_load(Path(COLORS_FILE).read_text())['colors']
-#     return tuple(hex2bgr(col) for col in hex_colors)
-
 def get_values(data:dict) -> list:
     """Return values for known response keys"""
     return [data[k] for k in RESPONSE_KEYS]
 
-def cleanup():
+def cleanup() -> None:
     """Deletes temporary image file after finished."""
     _ = Path(TEMPFILE).unlink(missing_ok=True)
 
-def plot_result(imgbytes:bytes, predictions:list, include_msg:bool=False):
+def attach_file(img_data:np.ndarray, encode:str='.png', name:str='detections') -> discord.File:
+    """Generates Discord message file attachment from numpy image array."""
+    encode = encode if encode.startswith('.') else ('.' + encode)
+
+    try:
+        img_attachmnt = discord.File(io.BytesIO(cv.imencode(encode, img_data)[1]), f'{name}{encode}')
+        Loggr.info("Attached from memory")
+    
+    except:
+        _ = cv.imwrite(TEMPFILE, img_data)
+        img_attachmnt = discord.File(Path(TEMPFILE))
+        Loggr.info("Attached from disk")
+
+    return img_attachmnt
+
+def plot_result(imgbytes:bytes, predictions:list, include_msg:bool=False) -> tuple[np.ndarray, None|str]:
     # Load image
     img = cv.imdecode(np.frombuffer(imgbytes, np.uint8), -1)
     imH, imW = img.shape[:2]
@@ -78,15 +83,16 @@ def plot_result(imgbytes:bytes, predictions:list, include_msg:bool=False):
         x1, y1, x2, y2 = tuple(nxy2xy(xcycwh2xyxy(np.array((x, y, w, h))), imH, imW)) # n-xcycwh -> x1y1x2y2
         pred_boxes = np.vstack([pred_boxes, np.array((x1, y1, x2, y2, idx))])
         msg += f'''class:  {cls_name} conf:   {round(conf,3)} index:  {idx} x1y1x2y2: {(x1, y1, x2, y2)}\n'''
-        # TODO remove after tested
-        # clr_idx = select_color(idx)
-        # _ = cv.rectangle(anno_img, (x1, y1), (x2, y2), COLORS[clr_idx], 3)
 
     anno_img = draw_all_boxes(anno_img, pred_boxes[1:])
 
     return (anno_img, None) if not include_msg else (anno_img, msg)
 
-def reply_msg(response:requests.models.Response, plot:bool=False, req_img:bytes=None):
+def reply_msg(response:requests.models.Response, 
+              plot:bool=False,
+              req_img:bytes=None
+              ) -> tuple[str | None, discord.File] | tuple[str, None]:
+    
     plot = (req_img is not None or req_img != '') and plot
 
     pred, reply, success = response.json().values()
@@ -95,9 +101,16 @@ def reply_msg(response:requests.models.Response, plot:bool=False, req_img:bytes=
     if (success or response.status_code == 200) and plot:
         result, msg = plot_result(req_img, pred, True)
         
-        # NOTE figure out how to skip file save and directly upload from memory
-        _ = cv.imwrite(TEMPFILE, result)
-        box_img = discord.File(Path(TEMPFILE))
+        box_img = attach_file(result)
+        # # NOTE figure out how to skip file save and directly upload from memory
+        # try:
+        #     box_img = discord.File(io.BytesIO(cv.imencode('.png', result)[1]), 'detections.png')
+        #     Loggr.info("Attached from memory")
+        # except:
+        #     _ = cv.imwrite(TEMPFILE, result)
+        #     box_img = discord.File(Path(TEMPFILE))
+        #     Loggr.info("Attached from disk")
+
         out = (msg, box_img)
 
     elif success and not plot:
@@ -153,9 +166,16 @@ def main(T,H):
             if response.status_code == 200:
                 preds, reply, success = response.json().values()
                 result, _ = plot_result(image_data, preds, False)
-                                
-                _ = cv.imwrite(TEMPFILE, result)
-                box_img = discord.File(Path(TEMPFILE))
+                
+                box_img = attach_file(result)
+                # try:
+                #     box_img = discord.File(io.BytesIO(cv.imencode('.png', result)[1]), 'detections.png')
+                #     Loggr.info("Attached from memory")
+                # except:
+                #     _ = cv.imwrite(TEMPFILE, result)
+                #     box_img = discord.File(Path(TEMPFILE))
+                #     Loggr.info("Attached from disk")
+
                 await message.reply("Detections", file=box_img)
                 
                 # cleanup() # TODO find method to attach image data w/o saving to disk
@@ -188,6 +208,7 @@ def main(T,H):
                 }
         try:
             req = requests.post(REQ_ENDPOINT, json=request_dict)
+        
         except Exception as e:
             Loggr.error(f"Error during request: {e}")
             await interaction.response.send_message("Error: API request failed")
