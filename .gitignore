@@ -12,14 +12,15 @@ __pycache__/
 
 # MEDIA
 *.mp4
-*.png
-*.jpg
-*.jpeg
-*.bmp
-*.tiff
-*.tif
+# *.png
+# *.jpg
+# *.jpeg
+# *.bmp
+# *.tiff
+# *.tif
 *.pdf
-assets/
+assets/test_imgs/
+src/*.png
 
 # MISC
 links.txt
