@@ -74,7 +74,7 @@ def plot_result(imgbytes:bytes, predictions:list, include_msg:bool=False) -> tup
     imH, imW = img.shape[:2]
     anno_img = np.copy(img)
     
-    msg = f'''Detections:\n''' # TODO include @user
+    msg = f'''Detections:\n'''
     pred_boxes = np.zeros((1,5)) # x-center, y-center, width, height, class
     # NOTE maybe better to convert bbox coordinates before generating message?
     for p in predictions:
@@ -95,7 +95,7 @@ def reply_msg(response:requests.models.Response,
     plot = (req_img is not None or req_img != '') and plot
 
     pred, reply, success = response.json().values()
-    msg = f'''{reply}\n''' # TODO include @user
+    msg = f'''{reply}\n'''
 
     if (success or response.status_code == 200) and plot:
         result, msg = plot_result(req_img, pred, True)
@@ -112,7 +112,7 @@ def reply_msg(response:requests.models.Response,
             out = (msg, None)
 
     else:
-        out = ("Error: API call failed", None)
+        out = (f"Error: API call failed with {response.status_code} - {response.reason}", None)
     
     return out
 
@@ -135,8 +135,7 @@ def main(T,H):
 
             image_url = message.content.strip('$predict ') # assume only image URL is passed
             if image_url == '' and len(message.attachments) == 1:
-                image_url = message.attachements[0].url
-
+                image_url = message.attachements[0].url # TODO figure why this isn't working
             request_url = REQ_ENDPOINT
             image_data = requests.get(image_url).content
             
@@ -157,8 +156,6 @@ def main(T,H):
                 box_img = attach_file(result)
 
                 await message.reply("Detections", file=box_img)
-                
-                # cleanup() # TODO find method to attach image data w/o saving to disk
             
             else:
                 _, reply, success = response.json().values()
@@ -174,27 +171,29 @@ def main(T,H):
         size="OPTIONAL: Largest image dimension, single number only",
         model="OPTIONAL: One of 'yolov5(n|m|l|x)' or 'yolov8(n|m|l|x)'; EXAMPLE: yolov5n",
     )
-    async def im_predict(interaction:discord.Interaction, conf:float=0.3, iou:float=0.4, size:int=640, model:str='yolov8n', img_url:str='', show:bool=False):
+    async def im_predict(interaction:discord.Interaction, img_url:str='', conf:float=0.3, iou:float=0.4, size:int=640, model:str='yolov8n', show:bool=False):
         linklike = img_url.startswith('http://') or img_url.startswith('https://') or img_url.startswith('www.')
         if linklike:
             image_data = requests.get(img_url).content
-        request_dict = {
-                "confidence": str(conf),
-                "iou": str(iou),
-                "size": str(size),
-                "model": str(model),
-                "key": str(H),
-                "image": base64.b64encode(image_data).decode(),
-                }
-        try:
-            req = requests.post(REQ_ENDPOINT, json=request_dict)
-        
-        except Exception as e:
-            Loggr.error(f"Error during request: {e}")
-            await interaction.response.send_message("Error: API request failed")
-            
-        text, file = reply_msg(req, show, image_data)
-        await (interaction.response.send_message(text, file=file) if file is not None else interaction.response.send_message(text))
+            request_dict = {
+                    "confidence": str(conf),
+                    "iou": str(iou),
+                    "size": str(size),
+                    "model": str(model),
+                    "key": str(H),
+                    "image": base64.b64encode(image_data).decode(),
+                    }
+            try:
+                req = requests.post(REQ_ENDPOINT, json=request_dict)
+                
+            except Exception as e:
+                Loggr.error(f"Error during request: {e}")
+                await interaction.response.send_message("Error: API request failed")
+
+            text, file = reply_msg(req, show, image_data)
+            await (interaction.response.send_message(text, file=file) if file is not None else interaction.response.send_message(text))
+        else:
+            await interaction.response.send_message("That link was..._weird_.")
 
     client.run(T)
 
