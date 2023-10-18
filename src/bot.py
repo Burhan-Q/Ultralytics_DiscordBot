@@ -18,7 +18,7 @@ import yaml
 from discord import app_commands
 
 from UltralyticsBot import PROJ_ROOT
-from UltralyticsBot.utils.plotting import nxy2xy, xcycwh2xyxy, draw_all_boxes, select_color
+from UltralyticsBot.utils.plotting import nxy2xy, xcycwh2xyxy, draw_all_boxes, select_color, rel_line_size
 from UltralyticsBot.utils.logging import Loggr
 from UltralyticsBot.utils.general import dec2str, is_link, model_chk, gen_cmd, req_values, float_str, align_boxcoord
 
@@ -85,6 +85,7 @@ def plot_result(imgbytes:bytes, predictions:list, include_msg:bool=False) -> tup
     img = cv.imdecode(np.frombuffer(imgbytes, np.uint8), -1)
     imH, imW = img.shape[:2]
     anno_img = np.copy(img)
+    line_size = rel_line_size(imH,imW)
     
     if include_msg:
         msg = '```\n' # start monospacing
@@ -98,7 +99,7 @@ def plot_result(imgbytes:bytes, predictions:list, include_msg:bool=False) -> tup
         if include_msg:
             msg += f'{cls_name.ljust(10)} {dec2str(conf)}  {align_boxcoord([x1,y1,x2,y2]).ljust(24)}\n'
     
-    anno_img = draw_all_boxes(anno_img, pred_boxes[1:])
+    anno_img = draw_all_boxes(anno_img, pred_boxes[1:], line_size)
     
     return (anno_img, '') if not include_msg else (anno_img, msg + '```')
 
