@@ -10,6 +10,24 @@ import re
 
 MODEL_RGX = r'((yolov)(5|8)(n|s|m|l|x))'
 
+def float_str(num:str) -> bool:
+    """Checks if string is a valide float-like number. Returns `True` when all values around `.` are numeric and only one `.` is present, otherwise returns `False`."""
+    return all([n.isnumeric() for n in num.split('.')]) and num.count('.') == 1
+
+def req_values(data:dict) -> dict:
+    """Converts string values in dictionary to either ``float`` or ``int`` where appropriate."""
+    for k,v in data.items():
+        if isinstance(v,str) and float_str(v):
+            data[k] = float(v)
+            # if None or is (str) but not float_str, do nothing
+        elif isinstance(v,str) and v.isnumeric():
+            data[k] = int(v)
+    return data
+
+def align_boxcoord(pxl_coords:list|tuple) -> str:
+    """Creates string from pixel-space bounding box coordinates and right aligns coordinates."""
+    return f'{str(tuple(str(coor).rjust(4) for coor in pxl_coords))}'.replace("'","")
+
 def dec2str(num:float, round2:int=3, trail_zeros:bool=True) -> str:
     """Rounds decimal number to number of places provided, adds trailing zeros when `trail_zeros=True` (default)"""
     num = str(round(float(num), int(round2)))
@@ -72,6 +90,6 @@ def gen_cmd(model:str,
             args = f'--weights {model.lower()}.pt --source {source} --imgsz {size} --conf-thres {dec2str(conf,2,False)} --iou-thres {dec2str(iou,2,False)}'
             cmd += f' python detect.py {args}\n'
             cmd += '```'
-            
+    
     return cmd
 
