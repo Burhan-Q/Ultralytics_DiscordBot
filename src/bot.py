@@ -75,13 +75,16 @@ def plot_result(imgbytes:bytes, predictions:list, include_msg:bool=False) -> tup
     anno_img = np.copy(img)
     
     msg = f'''Detections:\n'''
+    msg += f'''{'class'.ljust(10)} {'conf'.ljust(4)}   {'x1y1x2y2'.ljust(25)}\n''' # Title, intention extra whitespace
+    
     pred_boxes = np.zeros((1,5)) # x-center, y-center, width, height, class
     # NOTE maybe better to convert bbox coordinates before generating message?
     for p in predictions:
         cls_name, conf, idx, *(x, y, w, h) = get_values(p)
         x1, y1, x2, y2 = tuple(nxy2xy(xcycwh2xyxy(np.array((x, y, w, h))), imH, imW)) # n-xcycwh -> x1y1x2y2
         pred_boxes = np.vstack([pred_boxes, np.array((x1, y1, x2, y2, idx))])
-        msg += f'''class:  {cls_name} conf:   {round(conf,3)} index:  {idx} x1y1x2y2: {(x1, y1, x2, y2)}\n'''
+        # msg += f'''class:  {cls_name} conf:   {round(conf,3)} index:  {idx} x1y1x2y2: {(x1, y1, x2, y2)}\n'''
+        msg += f'''{cls_name.ljust(10)} {round(conf,3)} {str((x1, y1, x2, y2)).rjust(24)}\n'''
 
     anno_img = draw_all_boxes(anno_img, pred_boxes[1:])
 
@@ -105,10 +108,12 @@ def reply_msg(response:requests.models.Response,
         out = (msg, box_img)
 
     elif success and not plot:
+        msg += f'''{'class'.ljust(10)} {'conf'.ljust(4)}   {'x1y1x2y2'.ljust(25)}\n'''
         for p in pred:
             cls_name, conf, idx, *(x, y, w, h) = get_values(p)
             # NOTE normalized (x,y,w,h) bounding boxes since image not loaded
-            msg += f'''class:  {cls_name} conf:   {round(conf,3)} index:  {idx} xywh: {tuple(round(v,3) for v in (x, y, w, h))}\n'''
+            # msg += f'''class:  {cls_name} conf:   {round(conf,3)} index:  {idx} xywh: {tuple(round(v,3) for v in (x, y, w, h))}\n'''
+            msg += f'''{cls_name.ljust(10)} {round(conf,3)} {str(tuple(round(v,3) for v in (x, y, w, h))).rjust(24)}\n'''
             out = (msg, None)
 
     else:
@@ -129,12 +134,13 @@ def main(T,H):
 
     # Message starting with `$predict` uses default inference settings
     @client.event
-    async def on_message(message):
-
+    async def on_message(message:discord.Message):
+        
         if message.content.startswith("$predict"):
-
             image_url = message.content.strip('$predict ') # assume only image URL is passed
-            if image_url == '' and len(message.attachments) == 1:
+            if image_url == '' and len(message.attachments) > 0:
+                Loggr.debug(message.attachments[0].url) # TESTING
+                _ = [Loggr.debug(a.url) for a in message.attachments] # TESTING
                 image_url = message.attachements[0].url # TODO figure why this isn't working
             request_url = REQ_ENDPOINT
             image_data = requests.get(image_url).content
@@ -172,6 +178,8 @@ def main(T,H):
         model="OPTIONAL: One of 'yolov5(n|m|l|x)' or 'yolov8(n|m|l|x)'; EXAMPLE: yolov5n",
     )
     async def im_predict(interaction:discord.Interaction, img_url:str='', conf:float=0.3, iou:float=0.4, size:int=640, model:str='yolov8n', show:bool=False):
+        await interaction.response.defer(thinking=True) # permits longer response times
+
         linklike = img_url.startswith('http://') or img_url.startswith('https://') or img_url.startswith('www.')
         if linklike:
             image_data = requests.get(img_url).content
@@ -191,9 +199,11 @@ def main(T,H):
                 await interaction.response.send_message("Error: API request failed")
 
             text, file = reply_msg(req, show, image_data)
-            await (interaction.response.send_message(text, file=file) if file is not None else interaction.response.send_message(text))
+            # await (interaction.response.send_message(text, file=file) if file is not None else interaction.response.send_message(text))
+            await (interaction.followup.send(content=text, file=file) if file is not None else interaction.followup.send(content=text))
         else:
-            await interaction.response.send_message("That link was..._weird_.")
+            # await interaction.response.send_message("That link was..._weird_.")
+            await interaction.followup.send("That link was..._weird_.")
 
     client.run(T)
 
