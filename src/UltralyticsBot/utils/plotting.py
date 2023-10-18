@@ -44,6 +44,10 @@ def select_color(n) -> int:
 
     return int(N)
 
+def rel_line_size(imH:int, imW:int):
+    """Calculates line thickness size relative to largest image dimension."""
+    return max(round(max(imH, imW) * 0.003), 2)
+
 def xcycwh2xyxy(boxes:np.ndarray) -> np.ndarray:
     """Convert x-center, y-center, width, height bounding box to xmin, ymin, xmax, ymax bounding box."""
     xc, yc, w, h = np.split(boxes, 4, -1)

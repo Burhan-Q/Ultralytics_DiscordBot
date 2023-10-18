@@ -5,7 +5,7 @@ Date: 2023-10-10
 
 Requires: discord.py, pyyaml, numpy, requests, opencv-python
 """
-
+import re
 import io
 import base64
 from pathlib import Path
@@ -18,8 +18,9 @@ import yaml
 from discord import app_commands
 
 from UltralyticsBot import PROJ_ROOT
-from UltralyticsBot.utils.plotting import nxy2xy, xcycwh2xyxy, draw_all_boxes, select_color
+from UltralyticsBot.utils.plotting import nxy2xy, xcycwh2xyxy, draw_all_boxes, select_color, rel_line_size
 from UltralyticsBot.utils.logging import Loggr
+from UltralyticsBot.utils.general import dec2str, is_link, model_chk, gen_cmd, req_values, float_str, align_boxcoord
 
 # References
 # Discord slash-command: https://stackoverflow.com/questions/71165431/how-do-i-make-a-working-slash-command-in-discord-py
@@ -32,7 +33,7 @@ ASSETS = PROJ_ROOT /'assets' # NOTE future, use this as fallback when no image i
 DEFAULT_INFER = REQ_CFG['default']
 REQ_ENDPOINT = REQ_CFG['endpoint']
 RESPONSE_KEYS = tuple(REQ_CFG['response'])
-TEMPFILE = 'detect_res.png'
+TEMPFILE = 'detect_res.png' # fallback
 
 # NOTE unverified bots in < 100 servers will be able to use message content intents, once above 100 servers, bot needs to be verified
 class MyClient(discord.Client):
@@ -53,10 +54,20 @@ def cleanup() -> None:
     """Deletes temporary image file after finished."""
     _ = Path(TEMPFILE).unlink(missing_ok=True)
 
+def inference_req(imgbytes:bytes, req2:str=REQ_ENDPOINT, **kwargs) -> requests.Response:
+    """Constructs JSON (as dictionary) request using image-bytes data and endpoint, will update request JSON (dictionary) with any values from `kwargs` if keywords are found in `DEFAULT_INFER` dictionary."""
+    req_dict = DEFAULT_INFER.copy()
+    if any(kwargs):
+        for k in kwargs:
+            _ = req_dict.update({k:kwargs[k]}) if k in req_dict else None
+    req_dict['key'] = HUB_KEY
+    req_dict['image'] = base64.b64encode(imgbytes).decode()
+    return requests.post(req2, json=req_dict)
+
 def attach_file(img_data:np.ndarray, encode:str='.png', name:str='detections') -> discord.File:
     """Generates Discord message file attachment from numpy image array."""
     encode = encode if encode.startswith('.') else ('.' + encode)
-
+    
     try:
         img_attachmnt = discord.File(io.BytesIO(cv.imencode(encode, img_data)[1]), f'{name}{encode}')
         Loggr.info("Attached from memory")
@@ -65,52 +76,64 @@ def attach_file(img_data:np.ndarray, encode:str='.png', name:str='detections') -
         _ = cv.imwrite(TEMPFILE, img_data)
         img_attachmnt = discord.File(Path(TEMPFILE))
         Loggr.info("Attached from disk")
-
+        cleanup() # NOTE unsure if this will cause errors here
+    
     return img_attachmnt
 
-def plot_result(imgbytes:bytes, predictions:list, include_msg:bool=False) -> tuple[np.ndarray, None|str]:
+def plot_result(imgbytes:bytes, predictions:list, include_msg:bool=False) -> tuple[np.ndarray, str]:
     # Load image
     img = cv.imdecode(np.frombuffer(imgbytes, np.uint8), -1)
     imH, imW = img.shape[:2]
     anno_img = np.copy(img)
+    line_size = rel_line_size(imH,imW)
     
-    msg = f'''Detections:\n'''
+    if include_msg:
+        msg = '```\n' # start monospacing
+        msg += f'''{'class'.ljust(10)} {'conf'.ljust(4)}   {'x1y1x2y2'.ljust(25)}\n''' # Title, intentional extra whitespace
+    
     pred_boxes = np.zeros((1,5)) # x-center, y-center, width, height, class
-    # NOTE maybe better to convert bbox coordinates before generating message?
     for p in predictions:
         cls_name, conf, idx, *(x, y, w, h) = get_values(p)
         x1, y1, x2, y2 = tuple(nxy2xy(xcycwh2xyxy(np.array((x, y, w, h))), imH, imW)) # n-xcycwh -> x1y1x2y2
         pred_boxes = np.vstack([pred_boxes, np.array((x1, y1, x2, y2, idx))])
-        msg += f'''class:  {cls_name} conf:   {round(conf,3)} index:  {idx} x1y1x2y2: {(x1, y1, x2, y2)}\n'''
-
-    anno_img = draw_all_boxes(anno_img, pred_boxes[1:])
-
-    return (anno_img, None) if not include_msg else (anno_img, msg)
+        if include_msg:
+            msg += f'{cls_name.ljust(10)} {dec2str(conf)}  {align_boxcoord([x1,y1,x2,y2]).ljust(24)}\n'
+    
+    anno_img = draw_all_boxes(anno_img, pred_boxes[1:], line_size)
+    
+    return (anno_img, '') if not include_msg else (anno_img, msg + '```')
 
 def reply_msg(response:requests.models.Response, 
               plot:bool=False,
-              req_img:bytes=None
+              txt_results:bool=False,
+              req_img:bytes=None,
+              debug:bool=False,
               ) -> tuple[str | None, discord.File] | tuple[str, None]:
-    
-    plot = (req_img is not None or req_img != '') and plot
-
+    """Generate reply message from inference request."""
+    plot = (req_img is not None or req_img != b'') and (plot or not txt_results)
     pred, reply, success = response.json().values()
     msg = f'''{reply}\n'''
-
-    if (success or response.status_code == 200) and plot:
-        result, msg = plot_result(req_img, pred, True)
-        
-        box_img = attach_file(result)
-
+    
+    # Request good, plotting results with or without text
+    if (success or response.status_code == 200) and (plot or not txt_results):
+        result, text = plot_result(req_img, pred, txt_results)
+        msg += text
+        box_img = attach_file(result) if not debug else 'DEBUGGING'
         out = (msg, box_img)
-
-    elif success and not plot:
+    
+    # Request good, not plotting results
+    elif success and (txt_results or not plot):
+        msg += '```\n'
+        msg += f'''{'class'.ljust(10)} {'conf'.ljust(4)}   {'nxywh'.ljust(25)}\n'''
         for p in pred:
             cls_name, conf, idx, *(x, y, w, h) = get_values(p)
             # NOTE normalized (x,y,w,h) bounding boxes since image not loaded
-            msg += f'''class:  {cls_name} conf:   {round(conf,3)} index:  {idx} xywh: {tuple(round(v,3) for v in (x, y, w, h))}\n'''
-            out = (msg, None)
-
+            msg += f'''{cls_name.ljust(10)} {dec2str(conf)}  {str(tuple(dec2str(v) for v in (x, y, w, h))).replace("'",'').ljust(24)}\n'''
+        
+        msg += '```'
+        out = (msg, None)
+    
+    # Request failed
     else:
         out = (f"Error: API call failed with {response.status_code} - {response.reason}", None)
     
@@ -120,7 +143,7 @@ def main(T,H):
     intents = discord.Intents.default()
     intents.message_content = True
     client = MyClient(intents=intents)
-
+    
     @client.event
     async def on_ready():
         await client.tree.sync()
@@ -129,38 +152,40 @@ def main(T,H):
 
     # Message starting with `$predict` uses default inference settings
     @client.event
-    async def on_message(message):
-
+    async def on_message(message:discord.Message):
+        
         if message.content.startswith("$predict"):
-
             image_url = message.content.strip('$predict ') # assume only image URL is passed
-            if image_url == '' and len(message.attachments) == 1:
-                image_url = message.attachements[0].url # TODO figure why this isn't working
-            request_url = REQ_ENDPOINT
-            image_data = requests.get(image_url).content
+            if image_url == '' and len(message.attachments) > 0:
+                Loggr.info("Inference using Discord message attachment.")
+                image_url = message.attachments[0].url
             
-            req_dict = DEFAULT_INFER.copy()
-            req_dict['key'] = H
-            req_dict['image'] = base64.b64encode(image_data).decode()
-
+            image_data = requests.get(image_url).content
             try:
-                response = requests.post(request_url, json=req_dict)
+                req = inference_req(image_data, req2=REQ_ENDPOINT)
+            
             except Exception as e:
                 Loggr.error(f"Error during request: {e}")
-                await message.channel.send("Error: API request failed")
-
-            if response.status_code == 200:
-                preds, reply, success = response.json().values()
-                result, _ = plot_result(image_data, preds, False)
-                
-                box_img = attach_file(result)
-
-                await message.reply("Detections", file=box_img)
+                await message.channel.send(f"Error: API request failed due to {e}")
             
-            else:
-                _, reply, success = response.json().values()
-                Loggr.error(f"Response code {response.status_code} with reply {reply} and reason {response.reason}")
-                await message.channel.send("Error: API request failed")
+            text, file = reply_msg(req, True, False, image_data)
+            text = text if text is not None or text != '' else f"{req.json()['message']}\n"
+            
+            await message.reply(text, file=file)
+
+            # if response.status_code == 200:
+            #     preds, reply, success = response.json().values()
+            #     result, _ = plot_result(image_data, preds, False)
+                
+            #     box_img = attach_file(result)
+
+            #     await message.reply("Detections", file=box_img)
+            #     # await message.delete(delay=30) # FUTURE
+            
+            # else:
+            #     _, reply, success = response.json().values()
+            #     Loggr.error(f"Response code {response.status_code} with reply {reply} and reason {response.reason}")
+            #     await message.channel.send(f"Error: API request failed with reason {response.reason}")
 
     # Slash-command for predict, allows for keyword parameters
     @client.tree.command(name='predict')
@@ -170,30 +195,38 @@ def main(T,H):
         iou="OPTIONAL: Intersection over union threshold for object detection",
         size="OPTIONAL: Largest image dimension, single number only",
         model="OPTIONAL: One of 'yolov5(n|m|l|x)' or 'yolov8(n|m|l|x)'; EXAMPLE: yolov5n",
+        show="OPTIONAL: Display image results with annotations."
     )
-    async def im_predict(interaction:discord.Interaction, img_url:str='', conf:float=0.3, iou:float=0.4, size:int=640, model:str='yolov8n', show:bool=False):
-        linklike = img_url.startswith('http://') or img_url.startswith('https://') or img_url.startswith('www.')
+    async def im_predict(interaction:discord.Interaction,
+                         img_url:str='',
+                         conf:float=0.35,
+                         iou:float=0.45,
+                         size:int=640,
+                         model:str='yolov8n',
+                         show:bool=False
+                         ):
+        await interaction.response.defer(thinking=True) # permits longer response time
+        
+        model = model_chk(model)
+        linklike = is_link(img_url)
+        size = str(size) if (isinstance(size, int) or str(size).isnumeric()) else DEFAULT_INFER['size']
+        conf = str(conf) if (isinstance(conf, float) or float_str(conf)) and 0 < float(conf) < 1.0 else DEFAULT_INFER['confidence']
+        iou = str(iou) if (isinstance(iou, float) or float_str(iou)) and 0 < float(iou) < 1.0 else DEFAULT_INFER['iou']
+
         if linklike:
             image_data = requests.get(img_url).content
-            request_dict = {
-                    "confidence": str(conf),
-                    "iou": str(iou),
-                    "size": str(size),
-                    "model": str(model),
-                    "key": str(H),
-                    "image": base64.b64encode(image_data).decode(),
-                    }
             try:
-                req = requests.post(REQ_ENDPOINT, json=request_dict)
+                req = inference_req(image_data, req2=REQ_ENDPOINT, confidence=str(conf), iou=str(iou), size=str(size), model=str(model))
                 
             except Exception as e:
                 Loggr.error(f"Error during request: {e}")
-                await interaction.response.send_message("Error: API request failed")
+                await interaction.response.send_message(f"Error: API request failed due to {e}")
 
-            text, file = reply_msg(req, show, image_data)
-            await (interaction.response.send_message(text, file=file) if file is not None else interaction.response.send_message(text))
+            text, file = reply_msg(req, show, True, image_data)
+            await (interaction.followup.send(content=text, file=file) if file is not None else interaction.followup.send(content=text))
+
         else:
-            await interaction.response.send_message("That link was..._weird_.")
+            await interaction.followup.send("That link was..._weird_.")
 
     client.run(T)
 
