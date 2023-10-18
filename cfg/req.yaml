@@ -5,7 +5,7 @@ default: # default inference request
   model: "yolov8n"
   key: null
   image: null
-endpoint: "https://test.ultralytics.com/detect" # Inference API endpoint
+endpoint: "https://api.ultralytics.com/detect" # Inference API endpoint
 response: # response keys
   - name
   - confidence
