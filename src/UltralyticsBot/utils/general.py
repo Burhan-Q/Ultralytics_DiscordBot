@@ -7,8 +7,13 @@ Requires: discord.py, pyyaml, numpy, requests, opencv-python
 """
 
 import re
+import base64
+
+import requests
 
 MODEL_RGX = r'((yolov)(5|8)(n|s|m|l|x))'
+URL_RGX = r"^(http[s]?:\/\/)?([^:\/\s]+)(:([^\/]*))?(\/\w+\.)*([^#?\s]+)(\?([^#]*))?(#(.*))?$" # source regex101.com/r/lQ1nI3
+IMG_EXT = ('.bmp', '.png', '.jpeg', '.jpg', '.tif', '.tiff', '.webp') # reference docs.ultralytics.com/modes/predict/#images, skipping (.mpo, .dng, .pfm)
 
 def float_str(num:str) -> bool:
     """Checks if string is a valide float-like number. Returns `True` when all values around `.` are numeric and only one `.` is present, otherwise returns `False`."""
@@ -34,8 +39,13 @@ def dec2str(num:float, round2:int=3, trail_zeros:bool=True) -> str:
     return num + ('0' * abs(len(num.split('.')[-1]) - int(round2)) if trail_zeros else '')
 
 def is_link(text:str) -> bool:
-    """Verify if string starts with any of `http://`, `https://`, or `wwww.`"""
-    return any([text.lower().startswith(h) for h in ['http://','https://','www.']])
+    """Verify if string is a valid URL with regex"""
+    # return any([text.lower().startswith(h) for h in ['http://','https://','www.']])
+    return re.search(URL_RGX, text, re.IGNORECASE) is not None
+
+def is_img_link(text:str) -> bool:
+    """Verifies string is both valid URL and contains a supported image file extension."""
+    return is_link(text) and any(tuple(re.search(rf'({e})', text, re.IGNORECASE) for e in IMG_EXT))
 
 def model_chk(model_str:str) -> str:
     """Checks that model provided is conforms to standard string format, will default to YOLOv8 model if not valid version provided, and defaults to nano size if no valid model size provided."""
