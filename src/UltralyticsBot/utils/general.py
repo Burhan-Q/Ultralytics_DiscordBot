@@ -207,7 +207,7 @@ class ReqImage:
         """Resize image dimensions to keep below inference threshold limit."""
         data = self.imdata if data is None else data
         need2shrink = data_over_limit(data, self.__MBsize_limit)
-        r = min((self.__MBsize_limit / self.data_size()), 1.0)
+        r = min(((self.__MBsize_limit / self.data_size()) * 0.95), 1.0) # reduce by additional 5% for base64 encoding bloat (increase ~33%)
         
         if need2shrink and isinstance(self.image, np.ndarray) and not self.image_error:
             self.infer_img = cv.resize(np.copy(self.image), None, (0,0), round(r,2), round(r,2))
