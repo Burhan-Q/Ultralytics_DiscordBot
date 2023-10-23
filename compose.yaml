@@ -1,0 +1,7 @@
+services:
+  bot:
+    build: .
+    container_name: ubot
+    volumes:
+      - ./:/bot/src
+      # untested, possible volume may not work
