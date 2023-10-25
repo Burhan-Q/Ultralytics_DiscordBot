@@ -7,3 +7,5 @@ services:
         source: ./
         target: /bot # logs saving to /bot/bot.log 
       # untested, possible volume may not work
+
+# start with docker compose up -d --build
