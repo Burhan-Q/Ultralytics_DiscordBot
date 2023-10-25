@@ -110,7 +110,7 @@ def reply_msg(response:requests.models.Response,
               ) -> tuple[str | None, discord.File] | tuple[str, None]:
     """Generate reply message from inference request."""
     plot = (plot or not txt_results) and isinstance(req_img.infer_img, np.ndarray)
-    pred, reply, success = response.json().values()
+    pred, reply, success = response.json().values() # NOTE this will raise ERROR if not enough values returned
     msg = f'''{reply}\n'''
     
     # Request good, plotting results with or without text
@@ -180,9 +180,9 @@ def main(T,H):
             text = text if text is not None or text != '' else f"{req.json()['message']}\n"
             
             await message.reply(text, file=file)
-
+    
     # Slash-command for predict, allows for keyword parameters
-    @client.tree.command(name='predict')
+    @client.tree.command(name='predict', description="Runs inference on image link provided.")
     @app_commands.describe(
         img_url="REQUIRED: Full URL to image",
         conf="OPTIONAL: Confidence threshold for object classification",
@@ -192,12 +192,12 @@ def main(T,H):
         show="OPTIONAL: Display image results with annotations."
     )
     async def im_predict(interaction:discord.Interaction,
-                         img_url:str='',
-                         conf:float=0.35,
-                         iou:float=0.45,
-                         size:int=640,
+                         img_url:str,
+                         conf:app_commands.Range[float, 0.01, 1.0]=0.35,
+                         iou:app_commands.Range[float, 0.1, 0.95]=0.45,
+                         size:app_commands.Range[int, 32, 1280]=640,
                          model:str='yolov8n',
-                         show:bool=False
+                         show:bool=False,
                          ):
         await interaction.response.defer(thinking=True) # permits longer response time
         
@@ -205,7 +205,7 @@ def main(T,H):
         size = str(size) if (isinstance(size, int) or str(size).isnumeric()) else DEFAULT_INFER['size']
         conf = str(conf) if (isinstance(conf, float) or float_str(conf)) and 0 < float(conf) < 1.0 else DEFAULT_INFER['confidence']
         iou = str(iou) if (isinstance(iou, float) or float_str(iou)) and 0 < float(iou) < 1.0 else DEFAULT_INFER['iou']
-
+        
         image = ReqImage(img_url)
         image.process()
         image_data = image.im2bytes(image.infer_img)
