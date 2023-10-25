@@ -3,5 +3,7 @@ services:
     build: .
     container_name: ubot
     volumes:
-      - ./:/bot/src
+      - type: bind
+        source: ./
+        target: /bot # logs saving to /bot/bot.log 
       # untested, possible volume may not work

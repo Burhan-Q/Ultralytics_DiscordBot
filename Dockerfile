@@ -11,7 +11,6 @@ CMD ["python3", "src/bot.py"]
 
 # Dockerfile ref: https://www.pythondiscord.com/pages/guides/python-guides/docker-hosting-guide/
 
-
 # BUILD
 # cd /path/to/project
 # sudo docker build -t ubot .
