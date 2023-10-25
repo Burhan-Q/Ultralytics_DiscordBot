@@ -207,7 +207,7 @@ class ReqImage:
         """Resize image dimensions to keep below inference threshold limit."""
         data = self.imdata if data is None else data
         need2shrink = data_over_limit(data, self.__MBsize_limit)
-        r = min(((self.__MBsize_limit / self.data_size()) * 0.95), 1.0) # reduce by additional 5% for base64 encoding bloat (increase ~33%)
+        r = min(((self.__MBsize_limit / self.data_size())), 1.0)
         
         if need2shrink and isinstance(self.image, np.ndarray) and not self.image_error:
             self.infer_img = cv.resize(np.copy(self.image), None, (0,0), round(r,2), round(r,2))
@@ -227,11 +227,11 @@ class ReqImage:
             self.image_error = True
             Loggr.debug(f"Problem retriveving source image or resizing image for URL {self.im_url}")
     
-    def im2bytes(self, image:np.ndarray=None, enc:str=''):
+    def im2bytes(self, image:np.ndarray=None, enc:str='.jpeg'):
         """Either converts input image or `self.infer_img` from ``np.ndarray`` to ``bytes``."""
         enc = self.im_ext if enc in [None,''] else enc
         image = self.infer_img if image is None else image
-        return cv.imencode(enc, image)[1].tobytes()
+        return cv.imencode(enc, image, (cv.IMWRITE_JPEG_QUALITY, 70))[1].tobytes() # compress data
     
     
 # Large test image "https://i.imgur.com/pDNOqoa.png"
