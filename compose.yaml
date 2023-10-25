@@ -1,0 +1,9 @@
+services:
+  bot:
+    build: .
+    container_name: ubot
+    volumes:
+      - type: bind
+        source: ./
+        target: /bot # logs saving to /bot/bot.log 
+      # untested, possible volume may not work
