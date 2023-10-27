@@ -1,0 +1,69 @@
+Global:
+  about:
+    name: &abt About
+    slash_cmd: &abtcmd /about
+    description: &abtdes Displays information about UltralyticsBot
+    content: 
+
+  help:
+    name: &hlp Help
+    slash_cmd: &hlpcmd /help
+    description: &hlpdes Show help message for using UltralyticsBot
+    content:
+
+  predict:
+    name: &prd Predict
+    slash_cmd: &prdcmd /predict
+    description: &prddes Runs inference on image link provided.
+    parameters:
+      img_url:
+        description: Full URL to image file.
+        optional: False
+        default: null
+        type: (str)
+      show:
+        description: Display annotated result.
+        optional: True
+        default: True
+        type: (bool)
+      conf: 
+        description: Confidence threshold for predictions.
+        optional: True
+        default: 0.35
+        type: (float)
+        min: 0.01
+        max: 1.0
+      iou:
+        description: Intersection over union threshold for object detection.
+        optional: True
+        default: 0.4
+        type: (float)
+        min: 0.1
+        max: 0.95
+      size:
+        description: Largest image dimension, single number only.
+        optional: True
+        default: 640
+        type: (int)
+        min: 32
+        max: 1280
+      model:
+        description: "One of 'yolov5(n|m|l|x)' or 'yolov8(n|m|l|x)'; EXAMPLE: yolov5n"
+        optional: True
+        default: yolov8n
+        type: (str)
+  
+  commands: # must be last due to aliases
+    name: &cmd Commands
+    slash_cmd: &cmdcmd /commands
+    description: &cmddes Display list of available slash-commands and their descriptions.
+    content: # use join on each line
+      - [*abt, " - ", *abtdes, " type ", "`", *abtcmd, "`", " in message box to trigger."]
+      - [*cmd, " - ", *cmddes, " type ", "`", *cmdcmd, "`", " in message box to trigger."]
+      - [*hlp, " - ", *hlpdes, " type ", "`", *hlpcmd, "`", " in message box to trigger."]
+      - [*prd, " - ", *prddes, " type ", "`", *prdcmd, "`", " in message box to trigger."]
+
+
+Dev:
+  blank:
+    description: This is a placeholder for future developer only commands.
