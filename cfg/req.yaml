@@ -14,3 +14,13 @@ response: # response keys
   - ycenter
   - width
   - height
+limits: # Inference API request value limits
+  conf:
+    min: 0.01
+    max: 1.0
+  iou:
+    min: 0.95
+    max: 0.1
+  size:
+    min: 32
+    max: 1280
