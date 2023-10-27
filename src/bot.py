@@ -193,11 +193,11 @@ def main(T,H):
     )
     async def im_predict(interaction:discord.Interaction,
                          img_url:str,
+                         show:bool=True,
                          conf:app_commands.Range[float, 0.01, 1.0]=0.35,
                          iou:app_commands.Range[float, 0.1, 0.95]=0.45,
                          size:app_commands.Range[int, 32, 1280]=640,
                          model:str='yolov8n',
-                         show:bool=False,
                          ):
         await interaction.response.defer(thinking=True) # permits longer response time
         
