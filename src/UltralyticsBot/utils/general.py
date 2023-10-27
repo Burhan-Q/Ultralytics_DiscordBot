@@ -15,7 +15,7 @@ import numpy as np
 from UltralyticsBot.utils.logging import Loggr
 
 MODEL_RGX = r'((yolov)(5|8)(n|s|m|l|x))'
-URL_RGX = r"^(http[s]?:\/\/)?([^:\/\s]+)(:([^\/]*))?(\/\w+\.)*([^#?\s]+)(\?([^#]*))?(#(.*))?$" # source regex101.com/r/lQ1nI3
+URL_RGX = r"^(http[s]?:\/\/)?(www)?[.]?([a-zA-Z0-9\-]+([.][a-zA-Z0-9\-]{2,63})+)([/]+[a-zA-Z0-9?$&;^~=+!,:@\-#._]*(%[0-9a-fA-F]{2})*)*$"
 IMG_EXT = ('.bmp', '.png', '.jpeg', '.jpg', '.tif', '.tiff', '.webp') # reference docs.ultralytics.com/modes/predict/#images, skipping (.mpo, .dng, .pfm)
 
 def float_str(num:str) -> bool:
