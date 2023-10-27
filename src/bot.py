@@ -6,6 +6,7 @@ Date: 2023-10-10
 Requires: discord.py, pyyaml, numpy, requests, opencv-python
 """
 import io
+import re
 import base64
 from pathlib import Path
 
@@ -19,7 +20,7 @@ from discord import app_commands
 from UltralyticsBot import PROJ_ROOT
 from UltralyticsBot.utils.plotting import nxy2xy, xcycwh2xyxy, draw_all_boxes, select_color, rel_line_size
 from UltralyticsBot.utils.logging import Loggr
-from UltralyticsBot.utils.general import dec2str, is_link, model_chk, gen_cmd, req_values, float_str, align_boxcoord, ReqImage
+from UltralyticsBot.utils.general import URL_RGX, dec2str, is_link, model_chk, gen_cmd, req_values, float_str, align_boxcoord, ReqImage, ReqMessage, ReqImage2
 
 # References
 # Discord slash-command: https://stackoverflow.com/questions/71165431/how-do-i-make-a-working-slash-command-in-discord-py
@@ -31,6 +32,7 @@ REQ_CFG = yaml.safe_load((PROJ_ROOT / 'cfg/req.yaml').read_text())
 ASSETS = PROJ_ROOT /'assets' # NOTE future, use this as fallback when no image is provided
 DEFAULT_INFER = REQ_CFG['default']
 REQ_ENDPOINT = REQ_CFG['endpoint']
+REQ_LIM = REQ_CFG['limits']
 RESPONSE_KEYS = tuple(REQ_CFG['response'])
 TEMPFILE = 'detect_res.png' # fallback
 GH = "https://github.com/Burhan-Q/Ultralytics_DiscordBot"
@@ -105,17 +107,20 @@ def plot_result(img:np.ndarray, predictions:list, include_msg:bool=False) -> tup
 def reply_msg(response:requests.models.Response, 
               plot:bool=False,
               txt_results:bool=False,
-              req_img:ReqImage=None,
+              req_img:np.ndarray=None,
+              ratio:float=1.0,
               debug:bool=False,
               ) -> tuple[str | None, discord.File] | tuple[str, None]:
     """Generate reply message from inference request."""
-    plot = (plot or not txt_results) and isinstance(req_img.infer_img, np.ndarray)
+    plot = (plot or not txt_results) and isinstance(req_img, np.ndarray)
     pred, reply, success = response.json().values() # NOTE this will raise ERROR if not enough values returned
     msg = f'''{reply}\n'''
+    if ratio != 1.0 and txt_results:
+        msg += f'''**__NOTE:__** Results are for image scaled to {ratio} from original size, as required for inference.\n'''
     
     # Request good, plotting results with or without text
     if (success or response.status_code == 200) and (plot or not txt_results):
-        result, text = plot_result(req_img.infer_img, pred, txt_results)
+        result, text = plot_result(req_img, pred, txt_results)
         msg += text
         box_img = attach_file(result) if not debug else 'DEBUGGING'
         out = (msg, box_img)
@@ -138,7 +143,7 @@ def reply_msg(response:requests.models.Response,
     
     return out
 
-def main(T,H):
+def main(T, H, B):
     intents = discord.Intents.default()
     intents.message_content = True
     client = MyClient(intents=intents)
@@ -153,20 +158,27 @@ def main(T,H):
     @client.event
     async def on_message(message:discord.Message):
         
-        if message.content.startswith("$predict"):
-            image_url = message.content.strip('$predict ') # assume only image URL is passed
-            if image_url == '' and len(message.attachments) > 0:
-                Loggr.info("Inference using Discord message attachment.")
-                image_url = message.attachments[0].url
+        if message.content.startswith("$predict") or (B in [m.id for m in message.mentions]):
+            msg = ReqMessage(message)
+            image_url = msg.get_url()
+            # Loggr.info(f"Image url is {image_url}")
+            # image_url = message.content.strip('$predict ') # assume only image URL is passed
+            # if image_url == '' and len(message.attachments) > 0:
+            #     Loggr.info("Inference using Discord message attachment.")
+            #     image_url = message.attachments[0].url
             
-            image = ReqImage(image_url)
-            image.process()
+            # image = ReqImage(image_url)
+            # image.process()
+            image = ReqImage2(image_url)
+            infer_im, infer_data, infer_ratio = image.inference_img()
             try:
                 
                 if not image.image_error:
-                    image_data = image.im2bytes(image.infer_img)
-                    req = inference_req(image_data, req2=REQ_ENDPOINT)
-                    text, file = reply_msg(req, True, False, image)
+                    # image_data = image.im2bytes(image.infer_img)
+                    # req = inference_req(image_data, req2=REQ_ENDPOINT)
+                    req = inference_req(infer_data, req2=REQ_ENDPOINT)
+                    # text, file = reply_msg(req, True, False, image.infer_img)
+                    text, file = reply_msg(req, True, False, infer_im, infer_ratio)
                 else:
                     req = file = None
                     text = f"Error occured when fetching image, check URL and try again. Open issue and include URL on [project repo]({GH}) if continued problems with working image URL."
@@ -185,11 +197,11 @@ def main(T,H):
     @client.tree.command(name='predict', description="Runs inference on image link provided.")
     @app_commands.describe(
         img_url="REQUIRED: Full URL to image",
+        show="OPTIONAL: Display image results with annotations.",
         conf="OPTIONAL: Confidence threshold for object classification",
         iou="OPTIONAL: Intersection over union threshold for object detection",
         size="OPTIONAL: Largest image dimension, single number only",
         model="OPTIONAL: One of 'yolov5(n|m|l|x)' or 'yolov8(n|m|l|x)'; EXAMPLE: yolov5n",
-        show="OPTIONAL: Display image results with annotations."
     )
     async def im_predict(interaction:discord.Interaction,
                          img_url:str,
@@ -206,15 +218,19 @@ def main(T,H):
         conf = str(conf) if (isinstance(conf, float) or float_str(conf)) and 0 < float(conf) < 1.0 else DEFAULT_INFER['confidence']
         iou = str(iou) if (isinstance(iou, float) or float_str(iou)) and 0 < float(iou) < 1.0 else DEFAULT_INFER['iou']
         
-        image = ReqImage(img_url)
-        image.process()
-        image_data = image.im2bytes(image.infer_img)
+        # image = ReqImage(img_url)
+        # image.process()
+        # image_data = image.im2bytes(image.infer_img)
+        image = ReqImage2(img_url)
+        infer_im, infer_data, infer_ratio = image.inference_img(int(size))
         
         try:
             if not image.image_error:
-                image_data = image.im2bytes(image.infer_img)
-                req = inference_req(image_data, req2=REQ_ENDPOINT, confidence=str(conf), iou=str(iou), size=str(size), model=str(model))
-                text, file = reply_msg(req, show, True, image)
+                # image_data = image.im2bytes(image.infer_img)
+                # req = inference_req(image_data, req2=REQ_ENDPOINT, confidence=str(conf), iou=str(iou), size=str(size), model=str(model))
+                req = inference_req(infer_data, req2=REQ_ENDPOINT, confidence=str(conf), iou=str(iou), size=str(size), model=str(model))
+                # text, file = reply_msg(req, show, True, image.infer_img)
+                text, file = reply_msg(req, show, True, infer_im, infer_ratio)
             else:
                 req = file = None
                 text = f"Error occured when fetching image, check URL and try again. Open issue and include URL on [project repo]({GH}) if continued problems with working image URL."
@@ -232,5 +248,6 @@ if __name__ == '__main__':
     d = yaml.safe_load((PROJ_ROOT / 'SECRETS/codes.yaml').read_text())
     DISCORD_TOKEN = d['apikey']
     HUB_KEY = d['inferkey']
+    BOT_ID = d['botID']
 
-    main(DISCORD_TOKEN, HUB_KEY)
+    main(DISCORD_TOKEN, HUB_KEY, BOT_ID)
