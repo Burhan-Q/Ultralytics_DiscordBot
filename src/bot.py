@@ -20,7 +20,7 @@ from discord import app_commands
 from UltralyticsBot import PROJ_ROOT
 from UltralyticsBot.utils.plotting import nxy2xy, xcycwh2xyxy, draw_all_boxes, select_color, rel_line_size
 from UltralyticsBot.utils.logging import Loggr
-from UltralyticsBot.utils.general import URL_RGX, dec2str, is_link, model_chk, gen_cmd, req_values, float_str, align_boxcoord, ReqImage, ReqMessage, ReqImage2
+from UltralyticsBot.utils.general import URL_RGX, dec2str, is_link, model_chk, gen_cmd, req_values, float_str, align_boxcoord, ReqMessage, ReqImage
 
 # References
 # Discord slash-command: https://stackoverflow.com/questions/71165431/how-do-i-make-a-working-slash-command-in-discord-py
@@ -161,23 +161,14 @@ def main(T, H, B):
         if message.content.startswith("$predict") or (B in [m.id for m in message.mentions]):
             msg = ReqMessage(message)
             image_url = msg.get_url()
-            # Loggr.info(f"Image url is {image_url}")
-            # image_url = message.content.strip('$predict ') # assume only image URL is passed
-            # if image_url == '' and len(message.attachments) > 0:
-            #     Loggr.info("Inference using Discord message attachment.")
-            #     image_url = message.attachments[0].url
-            
-            # image = ReqImage(image_url)
-            # image.process()
-            image = ReqImage2(image_url)
+            imH, imW, imSize = msg.im_height, msg.im_width, msg.img_size
+
+            image = ReqImage(image_url, height=imH, width=imW, size=imSize)
             infer_im, infer_data, infer_ratio = image.inference_img()
+
             try:
-                
                 if not image.image_error:
-                    # image_data = image.im2bytes(image.infer_img)
-                    # req = inference_req(image_data, req2=REQ_ENDPOINT)
                     req = inference_req(infer_data, req2=REQ_ENDPOINT)
-                    # text, file = reply_msg(req, True, False, image.infer_img)
                     text, file = reply_msg(req, True, False, infer_im, infer_ratio)
                 else:
                     req = file = None
@@ -188,7 +179,6 @@ def main(T, H, B):
                 Loggr.error(f"Error during request: {e}")
                 await message.channel.send(f"Error: API request failed due to {e}")
             
-            # text, file = reply_msg(req, True, False, image_data)
             text = text if text is not None or text != '' else f"{req.json()['message']}\n"
             
             await message.reply(text, file=file)
@@ -214,22 +204,13 @@ def main(T, H, B):
         await interaction.response.defer(thinking=True) # permits longer response time
         
         model = model_chk(model)
-        size = str(size) if (isinstance(size, int) or str(size).isnumeric()) else DEFAULT_INFER['size']
-        conf = str(conf) if (isinstance(conf, float) or float_str(conf)) and 0 < float(conf) < 1.0 else DEFAULT_INFER['confidence']
-        iou = str(iou) if (isinstance(iou, float) or float_str(iou)) and 0 < float(iou) < 1.0 else DEFAULT_INFER['iou']
         
-        # image = ReqImage(img_url)
-        # image.process()
-        # image_data = image.im2bytes(image.infer_img)
-        image = ReqImage2(img_url)
+        image = ReqImage(img_url)
         infer_im, infer_data, infer_ratio = image.inference_img(int(size))
         
         try:
             if not image.image_error:
-                # image_data = image.im2bytes(image.infer_img)
-                # req = inference_req(image_data, req2=REQ_ENDPOINT, confidence=str(conf), iou=str(iou), size=str(size), model=str(model))
                 req = inference_req(infer_data, req2=REQ_ENDPOINT, confidence=str(conf), iou=str(iou), size=str(size), model=str(model))
-                # text, file = reply_msg(req, show, True, image.infer_img)
                 text, file = reply_msg(req, show, True, infer_im, infer_ratio)
             else:
                 req = file = None

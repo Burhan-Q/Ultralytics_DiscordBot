@@ -132,113 +132,49 @@ def gen_cmd(model:str,
 
 class ReqImage:
     """
-    Usage
-    ---
-    Class for inference request image. Generates image object from URL bytes data and has method to resize based on specified data inference size limit.
-
-    Arguments
-    ---
-    img_url - ``str`` URL pointing to image file
-    MB_lim - ``float`` | ``int`` value for inference limit in megabytes (MB), default value is 2.0 MB
-    
-    Methods
-    ---
-    process - retrieves URL image data, creates ``np.ndarray`` image, resizes image if too large for inference, sets `self.image_error=True` if issue present
-
-    gen_image - creates ``np.ndarray`` image from URL data
-
-    data_size - returns the size of image data in MB
-
-    resize_img - when `self.image` is too large for inference, resizes image and stores in `self.infer_img`
-
-    im2bytes - returns bytes data of input image or `self.infer_img` (default), must use original image extension (if none provided, retrieved from URL string)
-
     Attributes
     ---
+    url_good - ``bool``
+        When `True` URL appears good, otherwise `False`.
 
-    url_good - URL ``string`` passes regex check
+    im_url - ``str`` | ``None``
+        String URL for image, when URL is good and URL appears to be for an image.
 
-    im_ext - original file extension from URL ``string``
+    imdata - ``bytes`` | ``None``
+        Image from `self.image` as ``bytes`` data, or ``None`` if invalid.
 
-    im_url - valid image URL ``string``
+    size - ``int`` | ``None``
+        Size (MB) of `self.imdata` or value passed from `discord.Message` when image is attached.
 
-    imdata - ``bytes`` data retrieved from URL
+    image - ``np.ndarry`` | ``None``
+        When URL is valid, image data retrived from link.
 
-    image - ``np.ndarray`` generated from `self.imdata`
+    im_ext - ``str``
+        Original file extension of image retrived.
 
-    infer_img - ``np.ndarray`` to use for inference, if original `self.image` was too large, resized to below inference size threshold
+    height - ``int`` | ``None``
+        Value for `self.image` height.
 
-    image_error - `True` when error encountered during data processing, means any of `self.im_url`, `self.imdata`, `self.image`, or `self.infer_img` are ``None``
+    width - ``int`` | ``None``
+        Value for `self.image` width.
+
+    image_error - ``bool``
+        If error occurs while retriving image, will be `True` otherwise `False`.
+
+    Methods
+    ---
+    data_size() - Returns ``float`` of `self.imdata` in MB
+
+    get_image() - Fetches data from provided URL, executed during `__init__`
+
+    inference_img(infer_size, enc, Q) - Calculates and scales `self.image` dimensions for inference as needed, repopulates `self.size`, `self.height`, `self.width`, and `self.imdata` attributes if resized.
+
+        - infer_size ``int`` - size for inference, default 640
+
+        - enc ``str`` - file extension encoding for bytes data, default '.jpeg'
+
+        - Q ``int`` - percentage to compress data
     """
-    def __init__(self, img_url:str, MB_lim:float|int=2.0) -> None:
-        self.__MBsize_limit = MB_lim # inference request size limit, default is 2 MB (2097152 bytes)
-        self.__source_url = img_url
-        self.url_good, self.im_ext = is_img_link(img_url, True)
-        self.im_url = img_url if is_img_link(img_url) or self.url_good else None
-        self.imdata = self.image = self.infer_img = None
-        self.image_error = False
-        
-    def process(self):
-        """Retrieve data from URL (if valid), generate image object, and resize image as needed for inference request."""
-        self.imdata = requests.get(self.im_url).content if self.im_url is not None else None
-        self.gen_image() if self.imdata is not None else None
-        self.resize_img() if self.image is not None  else None
-        self.image_error = False if self.imdata and self.image is not None and self.infer_img is not None else True
-        Loggr.debug(f"Error retrieving data or image from {self.im_url}.") if self.image_error else Loggr.info(f"Data retrieved successfully.")
-        
-    def gen_image(self, data:bytes=None) -> None:
-        """Create image from URL data."""
-        data = self.imdata if data is None else data
-        try:
-            if self.im_url is not None and data is not None:
-                self.image = make_3ch_img(cv.imdecode(np.frombuffer(data, np.uint8), -1))
-            else:
-                self.image_error = True
-                Loggr.debug(f"Problem retrieving source image from data for URL {self.im_url}")
-        
-        except SyntaxError: # incorrect bytes string will raise this
-            self.image_error = True
-            Loggr.error(f"Syntax error for data retrieved from URL {self.im_url} when attempting to generate source image")
-        
-        except Exception as e: # all other error types
-            self.image_error = True
-            Loggr.error(f"Error {e} occurred when attempting to generate image from data for URL {self.im_url}")
-            
-    def data_size(self):
-        """Returns the size (MB) of the retrieved data"""
-        return (len(self.imdata) / (1024 ** 2))
-    
-    def resize_img(self, data:bytes=None):
-        """Resize image dimensions to keep below inference threshold limit."""
-        data = self.imdata if data is None else data
-        need2shrink = data_over_limit(data, self.__MBsize_limit)
-        r = min(((self.__MBsize_limit / self.data_size())), 1.0)
-        
-        if need2shrink and isinstance(self.image, np.ndarray) and not self.image_error:
-            self.infer_img = cv.resize(np.copy(self.image), None, (0,0), round(r,2), round(r,2))
-        
-        elif need2shrink and not isinstance(self.image, np.ndarray) and not self.image_error:
-            try:
-                _ = self.gen_image(self.imdata)
-                self.infer_img = cv.resize(np.copy(self.image), None, (0,0), round(r,2), round(r,2))
-            except cv.error:
-                self.image_error = True
-                Loggr.debug(f"Problem with source image for URL {self.im_url} unable to resize")
-        
-        elif not need2shrink and isinstance(self.image, np.ndarray) and not self.image_error:
-            self.infer_img = np.copy(self.image)
-        
-        else:
-            self.image_error = True
-            Loggr.debug(f"Problem retriveving source image or resizing image for URL {self.im_url}")
-    
-    def im2bytes(self, image:np.ndarray=None, enc:str='.jpeg'):
-        """Either converts input image or `self.infer_img` from ``np.ndarray`` to ``bytes``."""
-        enc = self.im_ext if enc in [None,''] else enc
-        image = self.infer_img if image is None else image
-        return cv.imencode(enc, image, (cv.IMWRITE_JPEG_QUALITY, 70))[1].tobytes() # compress data
-    
-class ReqImage2:
     def __init__(self, img_url:str, MB_lim:float|int=2.0, **kwargs) -> None:
         self.__MBsize_limit = MB_lim # inference request size limit, default is 2 MB (2097152 bytes)
         self.__source_url = img_url
@@ -282,7 +218,8 @@ class ReqImage2:
         if need2resize:
             R = round(min(((self.__MBsize_limit / self.size)), infer_size / self.height, infer_size / self.width, 1.0), 2)
             self.image = cv.resize(np.copy(self.image), None, None, R, R)
-            self.imdata = cv.imencode(enc, self.image, (cv.IMWRITE_JPEG_QUALITY, Q))[1].tobytes()
+            enc_params = None if enc.lower() not in ['.jpeg', '.jpg'] else (cv.IMWRITE_JPEG_QUALITY, Q)
+            self.imdata = cv.imencode(enc, self.image, enc_params)[1].tobytes()
             self.height, self.width = self.image.shape[:2]
 
         return self.image, self.imdata, R
@@ -291,6 +228,51 @@ class ReqImage2:
 # Normal test image "https://raw.githubusercontent.com/ultralytics/ultralytics/main/ultralytics/assets/bus.jpg"
 
 class ReqMessage:
+    """
+    Attributes
+    ---
+    msg - ``discord.Message``
+        Discord message for inference request.
+
+    url - ``str`` | ``None``
+        URL string when `self.msg` contains valid URL, otherwise ``None``.
+
+    author - ``discord.Message.author`` | ``None``
+        Discord message author.
+
+    mentions - ``list``
+        List of mentioned users in `self.msg`.
+
+    media - ``list[discord.Attachment]``
+        List of media attached to `self.msg`.
+
+    im_width - ``int`` | ``None``
+        Width in pixels of image attched to `self.msg` if any, otherwise ``None``.
+
+    im_height - ``int`` | ``None``
+        Height in pixels of image attched to `self.msg` if any, otherwise ``None``.
+
+    has_url - ``bool``
+        Is `True` when text from `self.msg` contains what appears to be valid URL string, otherwise `False`.
+
+    has_media - ``bool``
+        Is `True` when `self.msg` contains any attachments, otherwise `False`.
+
+    has_text - ``bool``
+        Is `True` when `self.msg` contains text other than triggering-keywords and whitespace, otherwise `False`.
+
+    has_img - ``bool``
+        Is `True` when `self.msg` has attachment with content type 'image', otherwise `False`
+
+    bot_mention - ``bool``
+        Is `True` when `self.msg` contains bot-user mention/tag, otherwise `False`.
+
+    Methods
+    ---
+    check_message() - Executes during `__init__` and populates attributes from `discord.Message`
+
+    get_url() - If attributes not populated, executes `check_message()` then returns first URL as ``str`` found in `discord.Message.content`, otherwise returns ``None``.
+    """
     commands = ['predict', 'help', 'about', 'hub'] # NOTE maybe pull from YAML instead
     
     def __init__(self, msg:discord.Message) -> None:
@@ -309,7 +291,7 @@ class ReqMessage:
         
         self.author = self.msg.author
         self.mentions = self.msg.mentions
-        self.bot_mention = BOT in self.mentions
+        self.bot_mention = BOT in [m.id for m in self.mentions]
         
         if self.has_text and self.has_url:
             self.url = re.search(URL_RGX, self.msg.content, re.IGNORECASE).group()
@@ -318,7 +300,7 @@ class ReqMessage:
             self.attached_im = [a for a in self.media if 'image' in a.content_type][0] # only allow one image
             self.url = self.attached_im.url
             self.im_height, self.im_width = self.attached_im.height, self.attached_im.width
-            self.img_size = self.attached_im.size
+            self.img_size = self.attached_im.size / (1024 ** 2)
     
     def get_url(self) -> str:
         _ = self.check_message() if self.url is None else None
