@@ -17,7 +17,7 @@ import requests
 import yaml
 from discord import app_commands
 
-from UltralyticsBot import PROJ_ROOT
+from UltralyticsBot import PROJ_ROOT, SECRETS, CMDS, REQ_CFG, ASSETS
 from UltralyticsBot.utils.plotting import nxy2xy, xcycwh2xyxy, draw_all_boxes, select_color, rel_line_size
 from UltralyticsBot.utils.logging import Loggr
 from UltralyticsBot.utils.general import URL_RGX, dec2str, is_link, model_chk, gen_cmd, req_values, float_str, align_boxcoord, ReqMessage, ReqImage
@@ -27,20 +27,20 @@ from UltralyticsBot.utils.general import URL_RGX, dec2str, is_link, model_chk, g
 # Discord library docs: https://discordpy.readthedocs.io/en/stable/
 # Dicord library examples: https://github.com/Rapptz/discord.py/tree/v2.3.2/examples
 
-REQ_CFG = yaml.safe_load((PROJ_ROOT / 'cfg/req.yaml').read_text())
+# REQ_CFG = yaml.safe_load((PROJ_ROOT / 'cfg/req.yaml').read_text())
 
-ASSETS = PROJ_ROOT /'assets' # NOTE future, use this as fallback when no image is provided
 DEFAULT_INFER = REQ_CFG['default']
 REQ_ENDPOINT = REQ_CFG['endpoint']
 REQ_LIM = REQ_CFG['limits']
 RESPONSE_KEYS = tuple(REQ_CFG['response'])
 TEMPFILE = 'detect_res.png' # fallback
 GH = "https://github.com/Burhan-Q/Ultralytics_DiscordBot"
+COMMANDS = CMDS['Global']
 
 # NOTE unverified bots in < 100 servers will be able to use message content intents, once above 100 servers, bot needs to be verified
 class MyClient(discord.Client):
     """Class for Discord slash-commands, requires message content intents"""
-    def __init__(self, *, intents: discord.Intents):
+    def __init__(self, *, intents:discord.Intents):
         super().__init__(intents=intents)
         self.tree = app_commands.CommandTree(self)
 
@@ -226,9 +226,9 @@ def main(T, H, B):
     client.run(T)
 
 if __name__ == '__main__':
-    d = yaml.safe_load((PROJ_ROOT / 'SECRETS/codes.yaml').read_text())
-    DISCORD_TOKEN = d['apikey']
-    HUB_KEY = d['inferkey']
-    BOT_ID = d['botID']
+    # d = yaml.safe_load((PROJ_ROOT / 'SECRETS/codes.yaml').read_text())
+    DISCORD_TOKEN = SECRETS['apikey']
+    HUB_KEY = SECRETS['inferkey']
+    BOT_ID = SECRETS['botID']
 
     main(DISCORD_TOKEN, HUB_KEY, BOT_ID)
