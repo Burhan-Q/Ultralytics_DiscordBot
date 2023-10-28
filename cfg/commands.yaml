@@ -1,18 +1,34 @@
 Global:
-  about:
-    name: &abt About
+  about: &abt
+    name: &abtN About
     slash_cmd: &abtcmd /about
-    description: &abtdes Displays information about UltralyticsBot
+    description: &abtdes Displays information about UltralyticsBot.
     content: 
+    parameters: 
+  
+  slashexample: &slexp
+    name: &slexpN SlashExample
+    slash_cmd: &slexpcmd /slashexample
+    description: &slexpdes Shows an example of `/predict` command.
+    content: 
+    parameters: 
 
-  help:
-    name: &hlp Help
+  msgexample: &msexp
+    name: &msexpN MessageExample
+    slash_cmd: &msexpcmd /msgexample
+    description: &msexpdes Shows an example of sending a message for prediction.
+    content: 
+    parameters: 
+
+  help: &hlp
+    name: &hlpN Help
     slash_cmd: &hlpcmd /help
-    description: &hlpdes Show help message for using UltralyticsBot
+    description: &hlpdes Show help message for using UltralyticsBot.
     content:
+    parameters: 
 
-  predict:
-    name: &prd Predict
+  predict: &prd
+    name: &prdN Predict
     slash_cmd: &prdcmd /predict
     description: &prddes Runs inference on image link provided.
     parameters:
@@ -58,10 +74,19 @@ Global:
     slash_cmd: &cmdcmd /commands
     description: &cmddes Display list of available slash-commands and their descriptions.
     content: # use join on each line
-      - [*abt, " - ", *abtdes, " type ", "`", *abtcmd, "`", " in message box to trigger."]
-      - [*cmd, " - ", *cmddes, " type ", "`", *cmdcmd, "`", " in message box to trigger."]
-      - [*hlp, " - ", *hlpdes, " type ", "`", *hlpcmd, "`", " in message box to trigger."]
-      - [*prd, " - ", *prddes, " type ", "`", *prdcmd, "`", " in message box to trigger."]
+      # - [*abtN, " - ", *abtdes, " type ", "`", *abtcmd, "`", " in message box to trigger."]
+      # - [*cmdN, " - ", *cmddes, " type ", "`", *cmdcmd, "`", " in message box to trigger."]
+      # - [*slexpN, " - ", *slexpdes, " type ", "`", *slexpcmd, "`", " in message box to trigger."]
+      # - [*msexp, " - ", *msexpdes, " type ", "`", *msexpcmd, "`", " in message box to trigger."]
+      # - [*hlpN, " - ", *hlpdes, " type ", "`", *hlpcmd, "`", " in message box to trigger."]
+      # - [*prdN, " - ", *prddes, " type ", "`", *prdcmd, "`", " in message box to trigger."]
+      - *abt
+      - *cmd
+      - *slexp
+      - *msexp
+      - *hlp
+      - *prd
+    parameters: 
 
 
 Dev:
