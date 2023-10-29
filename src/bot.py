@@ -17,10 +17,11 @@ import requests
 import yaml
 from discord import app_commands
 
-from UltralyticsBot import PROJ_ROOT, SECRETS, CMDS, REQ_CFG, ASSETS
+from UltralyticsBot import DEFAULT_INFER, REQ_ENDPOINT, REQ_LIM, RESPONSE_KEYS, GH, HUB_KEY, BOT_ID, BOT_TOKEN, GH, ASSETS, PROJ_ROOT, SECRETS, CMDS, REQ_CFG
 from UltralyticsBot.utils.plotting import nxy2xy, xcycwh2xyxy, draw_all_boxes, select_color, rel_line_size
 from UltralyticsBot.utils.logging import Loggr
-from UltralyticsBot.utils.general import URL_RGX, dec2str, is_link, model_chk, gen_cmd, req_values, float_str, align_boxcoord, ReqMessage, ReqImage
+from UltralyticsBot.utils.general import dec2str, gen_cmd, align_boxcoord, ReqMessage, ReqImage
+from UltralyticsBot.utils.checks import model_chk, URL_RGX
 
 # References
 # Discord slash-command: https://stackoverflow.com/questions/71165431/how-do-i-make-a-working-slash-command-in-discord-py
@@ -29,13 +30,14 @@ from UltralyticsBot.utils.general import URL_RGX, dec2str, is_link, model_chk, g
 
 # REQ_CFG = yaml.safe_load((PROJ_ROOT / 'cfg/req.yaml').read_text())
 
-DEFAULT_INFER = REQ_CFG['default']
-REQ_ENDPOINT = REQ_CFG['endpoint']
-REQ_LIM = REQ_CFG['limits']
-RESPONSE_KEYS = tuple(REQ_CFG['response'])
+# DEFAULT_INFER = REQ_CFG['default']
+# REQ_ENDPOINT = REQ_CFG['endpoint']
+# REQ_LIM = REQ_CFG['limits']
+# RESPONSE_KEYS = tuple(REQ_CFG['response'])
+# GH = "https://github.com/Burhan-Q/Ultralytics_DiscordBot"
+# COMMANDS = CMDS['Global']
+
 TEMPFILE = 'detect_res.png' # fallback
-GH = "https://github.com/Burhan-Q/Ultralytics_DiscordBot"
-COMMANDS = CMDS['Global']
 
 # NOTE unverified bots in < 100 servers will be able to use message content intents, once above 100 servers, bot needs to be verified
 class MyClient(discord.Client):
@@ -47,6 +49,10 @@ class MyClient(discord.Client):
     async def setup(self):
         """Sync commands, could take upto an hour to show up when bot is in lots of servers"""
         await self.tree.sync()
+    
+    # def cmd_pop(self, cmds:dict=CMDS['Global']):
+    #     for k,v in cmds.items():
+    #         setattr(self, k, self.tree.command(name=k, description=v['description']))
 
 def get_values(data:dict) -> list:
     """Return values for known response keys"""
@@ -116,7 +122,7 @@ def reply_msg(response:requests.models.Response,
     pred, reply, success = response.json().values() # NOTE this will raise ERROR if not enough values returned
     msg = f'''{reply}\n'''
     if ratio != 1.0 and txt_results:
-        msg += f'''**__NOTE:__** Results are for image scaled to {ratio} from original size, as required for inference.\n'''
+        msg += f'''**__NOTE:__** Results are for image scaled by `{ratio}` from original size, as required for inference.\n'''
     
     # Request good, plotting results with or without text
     if (success or response.status_code == 200) and (plot or not txt_results):
@@ -218,8 +224,8 @@ def main(T, H, B):
                 Loggr.debug(f"Issue fetching image from URL {img_url}")
             
         except Exception as e:
-            Loggr.error(f"Error during request: {e}")
-            await interaction.response.send_message(f"Error: API request failed due to {e}")
+            Loggr.error(f"Error during request: {e} and {req.reason}")
+            await interaction.followup.send(f"Error: API request failed due to {req.reason}")
             
         await (interaction.followup.send(content=text, file=file) if file is not None else interaction.followup.send(content=text))
     
@@ -227,8 +233,8 @@ def main(T, H, B):
 
 if __name__ == '__main__':
     # d = yaml.safe_load((PROJ_ROOT / 'SECRETS/codes.yaml').read_text())
-    DISCORD_TOKEN = SECRETS['apikey']
-    HUB_KEY = SECRETS['inferkey']
-    BOT_ID = SECRETS['botID']
+    # BOT_TOKEN = SECRETS['apikey']
+    # HUB_KEY = SECRETS['inferkey']
+    # BOT_ID = SECRETS['botID']
 
-    main(DISCORD_TOKEN, HUB_KEY, BOT_ID)
+    main(BOT_TOKEN, HUB_KEY, BOT_ID)
