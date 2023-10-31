@@ -3,29 +3,89 @@ Global:
     name: &abtN About
     slash_cmd: &abtcmd /about
     description: &abtdes Displays information about UltralyticsBot.
-    content: 
-    parameters: 
+    content: |
+      # About
+      UltralyticsBot is a Discord Bot for performing inference on images using the Ultralyics YOLO models. The Bot uses the [Ultralytics HUB](https://hub.ultralytics.com/signup?utm_source=GitHub&utm_medium=BotReadme) platform to provide inference results, and will be constrained by the service rate limiting.
+      
+      ## Additional information
+      The UltralyticsBot was developed initially for use in the [Ultralytics Discord Server](https://ultralytics.com/discord). The latest news and newest features will always be available here first.
+
+      For help, use `/help` and to view available commands use `/commands`. The code for this Bot can be found on the [Author's GitHub](https://github.com/Burhan-Q/Ultralytics_DiscordBot).
+      
+      ## Terms of Use and Privacy
+      User must comply with the [Discord Terms of Service](https://discord.com/terms) and the [Ultralytics Terms of Service](https://www.ultralytics.com/legal/terms-of-use). Also see the [Ultralytics Privacy Policy](https://www.ultralytics.com/legal/privacy). Use of this bot will serve as user consent for accpeting all of these terms.
+      Information about images sent to the UltralyticsBot may be collected and reviewed for tracking or fixing errors. You may see what information is collected via the logging in the source code shared to GitHub.
+    parameters: null
   
   slashexample: &slexp
     name: &slexpN SlashExample
     slash_cmd: &slexpcmd /slashexample
     description: &slexpdes Shows an example of `/predict` command.
-    content: 
-    parameters: 
+    content: |
+      # Prediction slash-command
+      The `/predict` command requires _only_ an image link to run. Here is an example [image link](https://raw.githubusercontent.com/ultralytics/ultralytics/main/ultralytics/assets/bus.jpg). The additional parameters are all optional and have default values. You should always get a response from the Bot, even when there is an error. If you experience any cases where no response occurs, please open an Issue on the [GitHub repo](https://github.com/Burhan-Q/Ultralytics_DiscordBot/issues) and be sure to include the image link, along with additional settings used.
+
+      ## Example command specifying all the parameters (default values)
+      `/predict` `img_url:https://raw.githubusercontent.com/ultralytics/ultralytics/main/ultralytics/assets/bus.jpg` `show:True` `conf:0.35` `iou:0.45` `size:640` `model:yolov8n`
+
+      ## Example command (minimum)
+      `/predict` `img_url:https://raw.githubusercontent.com/ultralytics/ultralytics/main/ultralytics/assets/bus.jpg`
+
+      ## Results
+      Text results will __always__ be returned. An image result of the detections will only be returned when the parameter `show=True` (default). Images with numerous objects may take longer to return, so be patient. If an error returns that states the 'Request was too large' (or something similar), specify a smaller image size. If the issue persists, please open an [issue](https://github.com/Burhan-Q/Ultralytics_DiscordBot/issues)
+
+    parameters: null
 
   msgexample: &msexp
     name: &msexpN MessageExample
     slash_cmd: &msexpcmd /msgexample
     description: &msexpdes Shows an example of sending a message for prediction.
-    content: 
-    parameters: 
+    content: |
+      # Prediction via message
+      It is also possible to send requests for inference via Discord messages. Message requests will **_always_** use the default configuration and __only__ provide results as an image with bounding boxes drawn. **NOTE:** examples are shown in code blocks below, but the bot will not recognize commands inside of code blocks.
+
+      ## Basic predict message
+      ```
+      $predict https://raw.githubusercontent.com/ultralytics/ultralytics/main/ultralytics/assets/bus.jpg
+      ```
+
+      ## Mention predict message
+      ```
+      @UltralyticsBot https://raw.githubusercontent.com/ultralytics/ultralytics/main/ultralytics/assets/bus.jpg
+      ```
+
+      ## Predict message + image attachment
+      ```
+      $predict
+      ```
+
+      ## Mention + image attachment
+      ```
+      @UltralyticsBot
+      ```
+      
+    parameters: null
 
   help: &hlp
     name: &hlpN Help
     slash_cmd: &hlpcmd /help
     description: &hlpdes Show help message for using UltralyticsBot.
-    content:
-    parameters: 
+    content: |
+      # UltralyticsBot Help
+
+      ### - For problems or errors with the Bot, please visit the [GitHub Repo](https://github.com/Burhan-Q/Ultralytics_DiscordBot/issues) and open an Issue. 
+
+      ### - For more on Ultralytics, visit the [website](https://ultralytics.com) or join the [Discord Server](https://ultralytics.com/discord).
+
+      ### - To learn more about how to use UltralyticsBot, try any of the commands below.
+
+      ## Commands
+      `/about`
+      `/commands`
+      `/slashexample`
+      `/msgexample`
+
+    parameters: null
 
   predict: &prd
     name: &prdN Predict
@@ -73,22 +133,50 @@ Global:
     name: &cmd Commands
     slash_cmd: &cmdcmd /commands
     description: &cmddes Display list of available slash-commands and their descriptions.
-    content: # use join on each line
-      # - [*abtN, " - ", *abtdes, " type ", "`", *abtcmd, "`", " in message box to trigger."]
-      # - [*cmdN, " - ", *cmddes, " type ", "`", *cmdcmd, "`", " in message box to trigger."]
-      # - [*slexpN, " - ", *slexpdes, " type ", "`", *slexpcmd, "`", " in message box to trigger."]
-      # - [*msexp, " - ", *msexpdes, " type ", "`", *msexpcmd, "`", " in message box to trigger."]
-      # - [*hlpN, " - ", *hlpdes, " type ", "`", *hlpcmd, "`", " in message box to trigger."]
-      # - [*prdN, " - ", *prddes, " type ", "`", *prdcmd, "`", " in message box to trigger."]
-      - *abt
-      - *cmd
-      - *slexp
-      - *msexp
-      - *hlp
-      - *prd
+    content: |
+      # Bot Commands
+
+      `/about` :: Information about UltralyticsBot.
+
+      `/help` :: Brief overview of using UltralyticsBot, where to get support, and short list of commands.
+
+      `/commands` :: That's how you got here.
+
+      `/predict` :: Runs inference on image link provided.
+        ```
+        img_link - [string] link to image data, there is no guarantee that any image link will work.
+        show - [bool] True returns image with annotations.
+        conf - [float] 0.01 <= 1.0 confidence threshold for object classification, higher values lowers the number of detection results.
+        iou - [float] 0.1 <= 0.95 intersection over union threshold, higher number will return multiple detections per object.
+        size - [integer] 32 <= 1280 dimension to use for largest image side, only provide a single value.
+        model - [string] all lower case specification for YOLOv5 or YOLOv8 model, with n, s, m, l, or x designation; example 'yolov5s'.
+        ```
+
+      `slashexample` :: A few examples on how to use `/predict` command.
+
+      `msgexample` :: A few examples on how to use UltralyticsBot via messages.
+
     parameters: 
 
-
 Dev:
-  blank:
-    description: This is a placeholder for future developer only commands.
+  status_change:
+    name: status_change
+    slash_cmd: /status_change
+    description: Allows Bot owner to change the activity status displayed for the bot.
+    parameters:
+      category:
+        description: "One of: 'game', 'stream', 'custom', 'watch', or 'listen'."
+        optional: False
+        default: null
+        type: (str)
+      name:
+        description: Name of Game/Content for activity.
+        optional: False
+        default: null
+        type: (str)
+
+Links:
+  Bot_GH: &botGH https://github.com/Burhan-Q/Ultralytics_DiscordBot
+  Ultralytics: &ultra https://www.ultralytics.com/
+  Ultralytics_GH: &ultraGH https://github.com/ultralytics
+  Ultralytics_HUB: &ultraHUB https://hub.ultralytics.com/signup?utm_source=GitHub&utm_medium=BotReadme
