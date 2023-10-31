@@ -22,6 +22,7 @@ class MyClient(discord.Client):
         await self.tree.sync()
     
     def cmd_pop(self, cmds:dict=CMDS):
+        """Populate client with commands from YAML file."""
         for k,v in cmds['Global'].items():
             setattr(self, 'GLOBAL_'+k, self.tree.command(name=k, description=v['description']))
         
