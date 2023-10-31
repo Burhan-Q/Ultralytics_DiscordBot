@@ -53,19 +53,19 @@ class ResponseMsg():
             setattr(self, k, self.reply_dict[k])
         
         self.msg = f'''{getattr(self, 'message')}\n'''
-        self.cls_pad = longest(self.data)
+        self.cls_pad = 2 if not any(self.data) else longest(self.data)
     
     def start_msg(self, plt_fn:Callable, infer_ratio:float=1.0, highlight:str=''):
         self.ratio = infer_ratio if self.ratio == 1.0 else self.ratio
         
         if self.reason == 'OK' or self.code == 200:
             self.msg += IMGSZ_MSG.format(self.ratio) if self.ratio != 1.0 and self.txt else ''
-            self.cls_pad = longest(self.data)
+            # self.cls_pad = 2 if not any(self.data) else longest(self.data)
             self.msg += '```{}\n'.format(highlight) if self.txt else ''
             self.msg += gen_title(self.cls_pad) if self.txt else ''
             
             self.anno_im, self.result_txt = plt_fn(predictions=self.data)
-            self.msg += (self.result_txt + '```' ) if self.txt else ''
+            self.msg += (self.result_txt + '```' ) if self.txt and self.result_txt != '' else ''
         else:
             self.anno_im = None
             self.msg = API_ERR_MSG.format(self.code, self.reason)
