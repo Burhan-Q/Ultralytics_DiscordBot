@@ -5,8 +5,9 @@ Date: 2023-10-10
 
 Requires: discord.py, pyyaml, numpy, requests, opencv-python
 """
-
+import io
 import re
+from pathlib import Path
 
 import requests
 import cv2 as cv
@@ -17,23 +18,7 @@ from UltralyticsBot import BOT_ID
 from UltralyticsBot.utils.logging import Loggr
 from UltralyticsBot.utils.checks import is_img_link, is_link, URL_RGX
 
-# MODEL_RGX = r'((yolov)(5|8)(n|s|m|l|x))'
-# URL_RGX = r"(http[s]?:\/\/)?(www)?[.]?([a-zA-Z0-9\-]+([.][a-zA-Z0-9\-]{2,63})+)([/]+[a-zA-Z0-9?$&;^~=+!,:@\-#._]*(%[0-9a-fA-F]{2})*[a-zA-Z0-9?$&;^~=+!,:@\-#._]*)*" # https://regex101.com/r/VzFmEN/2 NOTE captures most but not all URLs, anywhere in text
-# IMG_EXT = ('.bmp', '.png', '.jpeg', '.jpg', '.tif', '.tiff', '.webp') # reference docs.ultralytics.com/modes/predict/#images, skipping (.mpo, .dng, .pfm)
-
-# def float_str(num:str) -> bool:
-#     """Checks if string is a valide float-like number. Returns `True` when all values around `.` are numeric and only one `.` is present, otherwise returns `False`."""
-#     return all([n.isnumeric() for n in num.split('.')]) and num.count('.') == 1
-
-# def req_values(data:dict) -> dict:
-#     """Converts string values in dictionary to either ``float`` or ``int`` where appropriate."""
-#     for k,v in data.items():
-#         if isinstance(v,str) and float_str(v):
-#             data[k] = float(v)
-#             # if None or is (str) but not float_str, do nothing
-#         elif isinstance(v,str) and v.isnumeric():
-#             data[k] = int(v)
-#     return data
+TEMPFILE = 'detect_result' # fallback
 
 def align_boxcoord(pxl_coords:list|tuple) -> str:
     """Creates string from pixel-space bounding box coordinates and right aligns coordinates."""
@@ -43,19 +28,6 @@ def dec2str(num:float, round2:int=3, trail_zeros:bool=True) -> str:
     """Rounds decimal number to number of places provided, adds trailing zeros when `trail_zeros=True` (default)"""
     num = str(round(float(num), int(round2)))
     return num + ('0' * abs(len(num.split('.')[-1]) - int(round2)) if trail_zeros else '')
-
-# def is_link(text:str) -> bool:
-#     """Verify if string is a valid URL with regex"""
-#     # return any([text.lower().startswith(h) for h in ['http://','https://','www.']])
-#     return re.search(URL_RGX, text, re.IGNORECASE) is not None
-
-# def is_img_link(text:str,w_ext:bool=False) -> bool|tuple[bool,str|None]:
-#     """Verifies string is both valid URL and contains a supported image file extension. When `w_ext=True` will return ``tuple`` with check result and extension."""
-#     if w_ext:
-#         r = [ext.group() for ext in tuple(re.search(rf'({e})', text, re.IGNORECASE) for e in IMG_EXT) if ext is not None]
-#         return (is_link(text), r[0] if any(r) else None)
-#     else:
-#         return is_link(text) and any(tuple(re.search(rf'({e})', text, re.IGNORECASE) for e in IMG_EXT))
 
 def data_over_limit(data:bytes, lim:int=2.0) -> bool:
     """Checks if bytes data provided is larger than limit value, default limit is 2.0 MB (2097152 bytes)"""
@@ -75,24 +47,25 @@ def make_3ch_img(image:np.ndarray) -> np.ndarray:
         image = cv.cvtColor(image, cv.COLOR_GRAY2BGR) # NOTE assuming graysacle image if no channel count, don't expect this to occur
     return image
 
-# def model_chk(model_str:str) -> str:
-#     """Checks that model provided is conforms to standard string format, will default to YOLOv8 model if not valid version provided, and defaults to nano size if no valid model size provided."""
-#     if not is_link(model_str): # TODO add check for valid HUB link
-#         full = re.match(MODEL_RGX, model_str.lower(), re.IGNORECASE)
-#         if full:
-#             out = full.group().lower()
-#         elif not full:
-#             try:
-#                 num = re.search(r'\d', model_str).group()
-#                 num = num if num in ['5','8'] else '8'
-#             except AttributeError:
-#                 num = '8'
-#             size = model_str[-1].lower() if model_str[-1].lower() in ['n','s','m','l','x'] else 'n'
-#             out = 'yolov' + num + size
-#     else:
-#         out = model_str
+def cleanup(f_ext:str) -> None:
+    """Deletes temporary image file after finished."""
+    _ = Path(TEMPFILE).with_suffix(f_ext).unlink(missing_ok=True)
+
+def attach_file(img:np.ndarray, encode:str='.png', name:str=TEMPFILE) -> discord.File:
+    """Generates Discord message file attachment from numpy image array."""
+    encode = encode if encode.startswith('.') else ('.' + encode)
     
-#     return out
+    try:
+        img_attachmnt = discord.File(io.BytesIO(cv.imencode(encode, img)[1]), f'{name}{encode}')
+        Loggr.info("Attached from memory")
+    
+    except:
+        _ = cv.imwrite(f'{name}{encode}', img)
+        img_attachmnt = discord.File(Path(f'{name}{encode}'))
+        Loggr.info("Attached from disk")
+        cleanup(encode) # remove local file, unclear if error occurs before sending
+    
+    return img_attachmnt
 
 def gen_cmd(model:str,
             source:str,
@@ -211,10 +184,10 @@ class ReqImage:
             self.image_error = True
             Loggr.error(f"Error {e} occurred when attempting to generate image from data for URL {self.im_url}")
     
-    def inference_img(self, infer_size:int=640, enc:str='.jpeg', Q:int=70) -> tuple[np.ndarray, bytes, float]:
+    def inference_img(self, infer_size:int=640, enc:str='.jpeg', Q:int=60) -> tuple[np.ndarray, bytes, float]:
         """Generates inference image by resizing and compressing data as required. Returns inference image, image bytes, and resized ratio."""
         R = 1.0
-        need2resize = data_over_limit(self.imdata, self.__MBsize_limit) or image_oversize(img_dims=(self.height, self.width))
+        need2resize = data_over_limit(self.imdata, self.__MBsize_limit) or image_oversize(img_dims=(self.height, self.width), hLim=infer_size, wLim=infer_size)
         self.size = self.data_size() if self.size is None else self.size
         if need2resize:
             R = round(min(((self.__MBsize_limit / self.size)), infer_size / self.height, infer_size / self.width, 1.0), 2)
@@ -306,6 +279,10 @@ class ReqMessage:
     def get_url(self) -> str:
         _ = self.check_message() if self.url is None else None
         return self.url
+    
+    def media_info(self) -> tuple[int|None,int|None,float|None]:
+        """If image was attached, returns image height, width, and file-size."""
+        return self.im_height, self.im_width, self.img_size
     
 class ResponseMsg():
     def __init__(self, **kwargs) -> None:
