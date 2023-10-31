@@ -25,7 +25,7 @@
 A Discord bot for object detection inference using [Ultralytics HUB][hub] web API (beta). Initially this bot will only be available on the official [Ultralytics Discord Server][server]. The `UltralyticsBot` will also be self-hosted (running on a device I own), so it may not high-availability to start. This is the first Discord bot I've written and I'll do my best to support feature requests and issues.
 
 <p align="center">
-    <img src="/assets/readme/bot_slash-predict_results.png" alt="drawing" width="340"/>
+    <img src="/assets/readme/bot_slash-predict_results.png" alt="drawing" width="480"/>
 </p>
 
 ## Repository layout
