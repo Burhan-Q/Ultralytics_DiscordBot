@@ -14,7 +14,7 @@
 
 1. [Commands](#commands)
 
-    - [Message Comand Prediction](#message)
+    - [Available Bot Commands](#all-bot-commands)
 
     - [Slash Command Prediction](#slash-command)
 
@@ -32,19 +32,27 @@ A Discord bot for object detection inference using [Ultralytics HUB][hub] web AP
 
 ```sh
 ├───cfg
-│    └─── colors.yaml # hex color codes for bounding box annotations
-│    └─── Loggr.yaml # UltralyticsBot logger config
-│    └─── req.yaml # API request information
-│
+│       colors.yaml # hex color codes for bounding box annotations
+│       commands.yaml # bot commands and descriptions
+│       Loggr.yaml # UltralyticsBot logger config
+│       req.yaml # API request information
 ├───SECRETS
-│    └─── codes.yaml # Private Ultralytics HUB API key and Bot Token
-│
+│       codes.yaml # Private Ultralytics HUB API key and Bot Token
 └───src
-    └─── bot.py # bot application
-    └───UltralyticsBot
+     |  bot.py # bot application
+     └─ UltralyticsBot
+        │   __init__.py
+        ├─── cmds
+        │       __init__.py
+        │       actions.py
+        │       client.py
         └─── utils
-                └─── logging.py
-                └─── plotting.py
+                __init__.py
+                checks.py
+                general.py
+                logging.py
+                msgs.py
+                plotting.py
 ```
 
 ## Setup (self-host)
@@ -52,6 +60,12 @@ A Discord bot for object detection inference using [Ultralytics HUB][hub] web AP
 At present this Discord Bot is only configured to run on a local computer (self-hosted). Interface with Discord is accomplished using [discord.py](https://discordpy.readthedocs.io/en/stable/) for python 3.10.
 
 ### Discord Bot Setup
+
+<summary>
+
+Expand details for information on extending this code for your own Discord Bot or to self-host an `UltralyticsBot` instance yourself.
+
+<details>
 
 1. Login to the [Discord Developer Portal](https://discord.com/developers/) and select `Applications`.
 
@@ -115,6 +129,10 @@ At present this Discord Bot is only configured to run on a local computer (self-
 
     - **NOTE:** Your user account for the server must have adequate permissions to join a bot to the server.
 
+</details>
+
+<summary>
+
 ### See the [discord.py docs setup instructions](https://discordpy.readthedocs.io/en/stable/discord.html) as additional reference
 
 ### Ultralytics HUB
@@ -125,36 +143,36 @@ At present this Discord Bot is only configured to run on a local computer (self-
 
 ## Commands
 
-`UltralyticsBot` supports object detection via two methods:
+### All Bot Commands
 
-### Message
+!['Bot Commands Menu'](/assets/readme/bot_commands_menu.png)
 
-Send a message starting with `$predict` followed by a URL for an image, and `UltralyticsBot` will use the default inference request settings [found here](/cfg/req.yaml) and returns **only** an annotated image result.
+- About :: Provides a brief overview of UltralyticsBot.
 
-#### MESSAGE EXAMPLE:
+- Commands :: Shows available commands, provides a description, and outlines any parameters.
 
-!['Message-predict preview'](/assets/readme/bot_message-predict.png)
+- Help :: Displays a brief help message and recommmends commands to try.
 
-#### RESULT EXAMPLE:
+- Message Example :: Outlines examples of how to use UltralyticsBot `predict` via message commands.
 
-!['Message-predict results'](/assets/readme/bot_message-predict_results.png)
+- Predict :: This is the slash-command for executing inference on an image.
+
+- Slash Example :: Outlines an example of how to use UltralyticsBot `predict` slash-command.
 
 ### Slash Command
 
 In the Discord message box, type `/predict` and follow the prompts for adding additional arguments. The only required argument is the `image_url` but the other arguments allow for you to adjust the inference settings.
 
-| Argument |      Description     |          Values         | Required | Notes                                                             |
-| :------: | :------------------: | :---------------------: | :------: | :---------------------------------------------------------------- |
-|  img_url |   valid image link   |   string URL to image   |    YES   | [Some image links have been found not to work](#image-links)      |
-|   conf   | confidence threshold |    0.0 < `conf` < 1.0   | OPTIONAL | default = 0.35, [small values may cause error](#many-predictions) |
-|   iou    |    iou threshold     |    0.0 < `iou` < 1.0    | OPTIONAL | default = 0.45, [small values may cause error](#many-predictions) |
-|   size   | inference image size |   single integer >= 1   | OPTIONAL | default = 640, [large values may cause errors](#inference-size)   |
-|   model  |   inference model    | yolov(5\|8)(n\|m\|l\|x) | OPTIONAL | default = yolov8n, pretrained on [COCO2017][coco dataset]         |
-|   show   | show annotated image |      True \| False      | OPTIONAL | default = False (only text results)                               |
+| Argument |      Description     |          Values          | Required | Notes                                                             |
+| :------: | :------------------: | :----------------------: | :------: | :---------------------------------------------------------------- |
+|  img_url |   valid image link   |   string URL to image    |    YES   | [Some image links have been found not to work](#image-links)      |
+|   conf   | confidence threshold |    0.01 ≤ `conf` ≤ 1.0   | OPTIONAL | default = 0.35, [small values may cause error](#many-predictions) |
+|   iou    |    iou threshold     |    0.1 ≤ `iou` ≤ 0.95    | OPTIONAL | default = 0.45, [small values may cause error](#many-predictions) |
+|   size   | inference image size |    32 ≤ `size` ≤ 1280    | OPTIONAL | default = 640, [provide on value only](#inference-size)   |
+|   model  |   inference model    |  yolov(5\|8)(n\|m\|l\|x) | OPTIONAL | default = yolov8n, pretrained on [COCO2017][coco dataset]         |
+|   show   | show annotated image |       True \| False      | OPTIONAL | default = False (only text results)                               |
 
 #### COMMAND EXAMPLE:
-
-**NOTE** order of arguments has been updated to put `img_url` first
 
 !['Slash-predict preview'](/assets/readme/bot_slash-predict.png)
 
@@ -195,7 +213,7 @@ Images with a large quantity of objects to detect, especially if using small val
 
 ### Inference Size
 
-Specifying a large image size during inference may result in longer inference times. If the inference time is too long, the bot may timeout and not respond at all. Recommendation is to keep the default argument value `size=640` and only increase the inference size if/when absolutely required.
+Images may be scaled when sent for inference due to upload limit size. The `size` arugment will be the size at which the image will be scaled to when received by the endpoint for inference. The results message with provide a scaling factor for the image size _sent_ to the server as a point of reference.
 
 ---
 
