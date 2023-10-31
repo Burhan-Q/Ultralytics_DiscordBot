@@ -24,3 +24,4 @@ limits: # Inference API request value limits
   size:
     min: 32
     max: 1280
+max_req: 2097152 # 2 * (1024 ** 2) ~ 2.0 MB
