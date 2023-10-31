@@ -1,6 +1,12 @@
+"""
+Title: bot.py
+Author: Burhan Qaddoumi
+Date: 2023-10-10
 
+Requires: discord.py, pyyaml, numpy, requests, opencv-python
+"""
 import discord
-from discord import Intents, app_commands
+from discord import app_commands
 
 from UltralyticsBot import BOT_TOKEN, OWNER_ID, DEV_GUILD
 from UltralyticsBot.cmds.client import MyClient
@@ -17,7 +23,6 @@ def main():
     @client.event
     async def on_ready():
         await client.tree.sync()
-        # print("Initialized sync")
         Loggr.info("Initialized client sync")
     
     @client.event # NOTE
