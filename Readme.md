@@ -30,7 +30,7 @@ A Discord bot for object detection inference using [Ultralytics HUB][hub] web AP
 
 ## Repository layout
 
-```sh
+```yaml
 ├───cfg
 │       colors.yaml # hex color codes for bounding box annotations
 │       commands.yaml # bot commands and descriptions
@@ -39,14 +39,14 @@ A Discord bot for object detection inference using [Ultralytics HUB][hub] web AP
 ├───SECRETS
 │       codes.yaml # Private Ultralytics HUB API key and Bot Token
 └───src
-     |  bot.py # bot application
-     └─ UltralyticsBot
-        │   __init__.py
-        ├─── cmds
-        │       __init__.py
-        │       actions.py
-        │       client.py
-        └─── utils
+    |    bot.py # bot application
+    └───UltralyticsBot
+        │    __init__.py
+        ├───cmds
+        │        __init__.py
+        │        actions.py
+        │        client.py
+        └───utils
                 __init__.py
                 checks.py
                 general.py
@@ -145,7 +145,9 @@ Expand details for information on extending this code for your own Discord Bot o
 
 ### All Bot Commands
 
-!['Bot Commands Menu'](/assets/readme/bot_commands_menu.png)
+<p align="center">
+    <img src="/assets/readme/bot_commands_menu.png" alt="Bot Commands Menu" width="750"/>
+</p>
 
 - About :: Provides a brief overview of UltralyticsBot.
 
@@ -166,19 +168,23 @@ In the Discord message box, type `/predict` and follow the prompts for adding ad
 | Argument |      Description     |          Values          | Required | Notes                                                             |
 | :------: | :------------------: | :----------------------: | :------: | :---------------------------------------------------------------- |
 |  img_url |   valid image link   |   string URL to image    |    YES   | [Some image links have been found not to work](#image-links)      |
+|   show   | show annotated image |       True \| False      | OPTIONAL | default = True (only text results)                                |
 |   conf   | confidence threshold |    0.01 ≤ `conf` ≤ 1.0   | OPTIONAL | default = 0.35, [small values may cause error](#many-predictions) |
 |   iou    |    iou threshold     |    0.1 ≤ `iou` ≤ 0.95    | OPTIONAL | default = 0.45, [small values may cause error](#many-predictions) |
-|   size   | inference image size |    32 ≤ `size` ≤ 1280    | OPTIONAL | default = 640, [provide on value only](#inference-size)   |
+|   size   | inference image size |    32 ≤ `size` ≤ 1280    | OPTIONAL | default = 640, [provide on value only](#inference-size)           |
 |   model  |   inference model    |  yolov(5\|8)(n\|m\|l\|x) | OPTIONAL | default = yolov8n, pretrained on [COCO2017][coco dataset]         |
-|   show   | show annotated image |       True \| False      | OPTIONAL | default = False (only text results)                               |
 
-#### COMMAND EXAMPLE:
+#### Command Menu:
 
 !['Slash-predict preview'](/assets/readme/bot_slash-predict.png)
 
-!['Slash-predict running'](/assets/readme/bot_slash-predict_sending.png)
+#### Thinking Response
 
-#### RESULTS EXAMPLE:
+<p align="left">
+    <img src="/assets/readme/bot_slash-predict_sending.png" alt="drawing" width="480"/>
+</p>
+
+#### Command Results:
 
 !['Slash-predict results'](/assets/readme/bot_slash-predict_results.png)
 
@@ -186,22 +192,23 @@ In the Discord message box, type `/predict` and follow the prompts for adding ad
 
 ```
 Detections:
-class:  {1} conf:   {2} index:  {3} x1y1x2y2: ({4}, {5}, {6}, {7})
+class:  {1} conf:   {2}  x1y1x2y2: ({3}, {4}, {5}, {6})
 ```
 
 |  n  | Name     | Value                                    |
 | :-: | :------- | :--------------------------------------- |
 |  1  | class    | class name/label                         |
 |  2  | conf     | prediction confidence                    |
-|  3  | index    | class label index                        |
-|  4  | x1y1x2y2 | bounding box xmin                        |
-|  5  | x1y1x2y2 | bounding box ymin                        |
-|  6  | x1y1x2y2 | bounding box xmax                        |
-|  7  | x1y1x2y2 | bounding box ymax                        |
+|  3  | x1y1x2y2 | bounding box xmin                        |
+|  4  | x1y1x2y2 | bounding box ymin                        |
+|  5  | x1y1x2y2 | bounding box xmax                        |
+|  6  | x1y1x2y2 | bounding box ymax                        |
 
 ---
 
 ## Known Limitations and Issues
+
+There are a few limitations known with respect to using `UltralyticsBot`, which are outlined below. Addressing as many of these as possible will be included with future development work, so please be patient.
 
 ### Image Links
 
