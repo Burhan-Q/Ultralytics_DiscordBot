@@ -173,6 +173,14 @@ async def msgexample(interaction:discord.Interaction):
     msg = CMDS['Global']['msgexample']['content']
     await interaction.response.send_message(content=msg, suppress_embeds=True)
 
+def fetch_embed(embeds:dict, topic:str, sub_topic:str) -> discord.Embed:
+    return embeds[topic][sub_topic]
+
+# async def docs_task(interaction:discord.Interaction,
+#                     sub_section:app_commands.Choice[str],
+#                     user:str=None,
+#                     ):
+#     ...
 
 ###-----OWNER COMMANDS-----###
 
