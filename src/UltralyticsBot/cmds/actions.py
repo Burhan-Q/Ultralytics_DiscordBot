@@ -174,13 +174,9 @@ async def msgexample(interaction:discord.Interaction):
     await interaction.response.send_message(content=msg, suppress_embeds=True)
 
 def fetch_embed(embeds:dict, topic:str, sub_topic:str) -> discord.Embed:
+    """Simply returns value for keys provided."""
     return embeds[topic][sub_topic]
 
-# async def docs_task(interaction:discord.Interaction,
-#                     sub_section:app_commands.Choice[str],
-#                     user:str=None,
-#                     ):
-#     ...
 
 ###-----OWNER COMMANDS-----###
 
