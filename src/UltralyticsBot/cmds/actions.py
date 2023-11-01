@@ -119,30 +119,32 @@ async def im_predict(interaction:discord.Interaction,
         await interaction.response.defer(thinking=True) # permits longer response time
         
         model = model_chk(model)
-        
         image = ReqImage(img_url)
-        infer_im, infer_data, infer_ratio = image.inference_img(int(size))
+        # infer_im, infer_data, infer_ratio = image.inference_img(int(size))
+        if not image.image_error:
         
-        try:
-            if not image.image_error:
+            try:
+            # if not image.image_error:
+                infer_im, infer_data, infer_ratio = image.inference_img(int(size))
                 req = inference_req(infer_data, req2=REQ_ENDPOINT, confidence=str(conf), iou=str(iou), size=str(size), model=str(model))
                 req.raise_for_status()
                 Reply = ResponseMsg(req, show, True, infer_ratio)
                 file, text = Reply.start_msg(partial(process_result, img=infer_im, plot=show, class_pad=Reply.cls_pad), infer_ratio=infer_ratio)
                 file = attach_file(file) if show else None
-            else:
-                req = file = None
-                text = IMG_ERR_MSG
-                Loggr.debug(f"Issue fetching image from URL {img_url}")
         
-        except requests.HTTPError:
-            Loggr.error(f"Error during request: {e} with response {req.status_code} - {req.reason}")
-            await interaction.followup.send(API_ERR_MSG.format(req.status_code, req.reason))
+            except requests.HTTPError:
+                Loggr.error(f"Error during request: {e} with response {req.status_code} - {req.reason}")
+                await interaction.followup.send(API_ERR_MSG.format(req.status_code, req.reason))
 
-        except Exception as e:
-            Loggr.error(f"Error during request: {e} with response {req.status_code} - {req.reason}")
-            await interaction.followup.send(API_ERR_MSG.format(e, ' '.join(['and', req.status_code, req.reason])))
-            
+            except Exception as e:
+                Loggr.error(f"Error during request: {e} with response {req.status_code} - {req.reason}")
+                await interaction.followup.send(API_ERR_MSG.format(e, ' '.join(['and', req.status_code, req.reason])))
+        
+        else:
+            req = file = None
+            text = IMG_ERR_MSG
+            Loggr.debug(f"Issue fetching image from URL {img_url}")
+        
         if file is None:
             await interaction.followup.send(content=text)
         else:
