@@ -15,12 +15,15 @@ from pathlib import Path
 
 import yaml
 import discord
-# from discord import app_commands
+from discord import app_commands
 
+from UltralyticsBot import BOT_ID
 from UltralyticsBot.utils.logging import Loggr
 
 DOCS_URL = "https://docs.ultralytics.com/"
 GH_REPO = "https://github.com/ultralytics/ultralytics.git"
+ULTRA_LICENSING = "https://www.ultralytics.com/license"
+LICENSE = "AGPL-3.0"
 
 DOCS_DIR = "docs"
 DOCS_IDX = "mkdocs" # mkdocs.yml
@@ -31,6 +34,7 @@ LOGO_ICON = "https://raw.githubusercontent.com/ultralytics/assets/main/logo/Ultr
 INTGR8_BANNER = "https://raw.githubusercontent.com/ultralytics/assets/main/yolov8/banner-integrations.png"
 BGRD_LOGO = "https://raw.githubusercontent.com/ultralytics/assets/main/im/banner-ultralytics-github.png"
 FULL_LOGO = "https://raw.githubusercontent.com/ultralytics/assets/main/logo/Ultralytics-logotype-color.png"
+YOLO_LOGO = "https://assets-global.website-files.com/646dd1f1a3703e451ba81ecc/64994922cf2a6385a4bf4489_UltralyticsYOLO_mark_blue.svg"
 
 CATEGORIES = ['Modes', 'Tasks', 'Models', 'Datasets', 'Guides', 'Integrations']
 
@@ -82,8 +86,8 @@ def fetch_gh_docs(repo:str=GH_REPO, local_docs:str=LOCAL_DOCS) -> tuple[Path, su
     proc_run = subprocess.run(cmd, cwd=save_path, capture_output=True, text=True) # "Cloning into 'ultralytics'...\n", from `.stderr`, not certain how to capture more; `returncode == 0` should be successful
     return save_path, proc_run
 
-def docs_choices() -> dict:
-    """Fetches data from repo and crawls the Docs files for generating links to pages+sections of the Docs as Discord Embeds."""
+def docs_choices() -> tuple[dict, dict]:
+    """Fetches data from repo and crawls the Docs files for generating links to pages+sections of the Docs as Discord Embeds. First dictionary are the `discord.app_command.Choices` and the second include the `discord.Embed` objects."""
     Loggr.info(f"Fetching data from {GH_REPO} for documentation.")
     into_path, run_result = fetch_gh_docs()
     #TODO raise run_result.check_returncode() # Raises CalledProcessError
@@ -122,24 +126,25 @@ def docs_choices() -> dict:
                     
                     embed = discord.Embed(title=TITLE,
                                         colour=15665350, # pink-ish, looked okay
-                                        url=base_URL)
+                                        url=base_URL,)
                     _ = embed.set_image(url=FULL_LOGO)
                     _ = embed.set_thumbnail(url=LOGO_ICON)
                     
                     for section in TOC:
                         section_name = section.strip('# ').title()
                         section_link = md_index_2link(section, base_URL)
-                        
-                        _ = embed.add_field(name=section_name, value=f"[Go to section]({section_link})", inline=True)
+                        _ = embed.set_author(name="UltralyticsBot")
+                        _ = embed.add_field(name=section_name, value=f"[Go to section]({section_link})", inline=False)
+                        _ = embed.set_footer(text=f"Covered under {LICENSE} or Ultralytics Enterprise Licensing {ULTRA_LICENSING}\n", icon_url=YOLO_LOGO)
                     
                     _ = options[k].update({SUB_CAT.strip(string.punctuation).capitalize():embed})
     
     # Generate dictionary for use with app_commands.choices                
     opts_d = dict()
     for k,v in options.items():
-        opts_d.update({k:[dict(name=kk, value=kk) for kk in v]})
+        opts_d.update({k:[app_commands.Choice(name=kk, value=kk) for kk in v]})
     
-    return opts_d
+    return opts_d, options
     # app_commands.choices(**opts_d) # NOTE this might work as @decorator
 
 if __name__ == '__main__()':
