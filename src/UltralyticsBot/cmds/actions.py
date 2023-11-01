@@ -75,10 +75,12 @@ async def msg_predict(message:discord.Message):
         imH, imW, imSize = msg.media_info()
 
         image = ReqImage(image_url, height=imH, width=imW, size=imSize)
-        infer_im, infer_data, infer_ratio = image.inference_img()
+        if not image.image_error:
+        # infer_im, infer_data, infer_ratio = image.inference_img()
 
-        try:
-            if not image.image_error:
+            try:
+            # if not image.image_error:
+                infer_im, infer_data, infer_ratio = image.inference_img()
                 req = inference_req(infer_data, req2=REQ_ENDPOINT)
                 # req_d = inference_req(infer_data, req2=REQ_ENDPOINT) # NOTE may need to check request size
                 # req_sz = len(str(req_d).encode('utf-8'))
@@ -89,19 +91,20 @@ async def msg_predict(message:discord.Message):
                 Reply = ResponseMsg(req, True, False, infer_ratio)
                 file, text = Reply.start_msg(partial(process_result, img=infer_im, plot=True, class_pad=Reply.cls_pad), infer_ratio=infer_ratio)
                 file = attach_file(file)
-            else:
-                req = file = None
-                text = IMG_ERR_MSG
-                Loggr.debug(f"Issue fetching image from URL {image_url}")
         
-        except requests.HTTPError:
-            Loggr.error(API_ERR_MSG.format(req.status_code, req.reason))
-            await message.reply(API_ERR_MSG.format(req.status_code, req.reason))
+            except requests.HTTPError:
+                Loggr.error(API_ERR_MSG.format(req.status_code, req.reason))
+                await message.reply(API_ERR_MSG.format(req.status_code, req.reason))
 
-        except Exception as e:
-            Loggr.error(f"Error during request: {e} with response {req.status_code} - {req.reason}")
-            await message.reply(API_ERR_MSG.format(e, ' '.join(['and', req.status_code, req.reason])))
+            except Exception as e:
+                Loggr.error(f"Error during request: {e} with response {req.status_code} - {req.reason}")
+                await message.reply(API_ERR_MSG.format(e, ' '.join(['and', req.status_code, req.reason])))
         
+        else:
+            req = file = None
+            text = IMG_ERR_MSG
+            Loggr.debug(f"Issue fetching image from URL {image_url}")
+
         text = text if text is not None or text != '' else f"{Reply.message}\n"
         
         await message.reply(text, file=file)
