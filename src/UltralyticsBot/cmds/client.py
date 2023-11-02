@@ -17,6 +17,7 @@ class MyClient(discord.Client):
     def __init__(self, *, intents:discord.Intents):
         super().__init__(intents=intents)
         self.tree = app_commands.CommandTree(self)
+        self.cmd_pop()
     
     async def setup(self):
         """Sync commands, could take upto an hour to show up when bot is in lots of servers"""
@@ -28,7 +29,7 @@ class MyClient(discord.Client):
         Loggr.info(f"Populating commands to client.")
         for k,v in cmds['Global'].items():
             setattr(self, 'GLOBAL_'+k, self.tree.command(name=k, description=v['description']))
-        
+
         for k,v in cmds['Dev'].items():
             setattr(self, 'DEV_'+k, self.tree.command(name=k, description=v['description']))
         
