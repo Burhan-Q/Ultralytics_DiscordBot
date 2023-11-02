@@ -133,11 +133,11 @@ def docs_choices() -> tuple[dict, dict]:
                     _ = embed.set_image(url=FULL_LOGO)
                     _ = embed.set_thumbnail(url=LOGO_ICON)
                     
-                    for section in TOC:
+                    for si,section in enumerate(TOC, 1):
                         section_name = section.strip('# ').title()
                         section_link = md_index_2link(section, base_URL)
                         _ = embed.set_author(name="UltralyticsBot")
-                        _ = embed.add_field(name=section_name, value=f"[Go to section]({section_link})", inline=False)
+                        _ = embed.add_field(name=section_name, value=f"[Go to section]({section_link})", inline=False) # NOTE inline fields get smooshed and look bad, don't use
                         _ = embed.set_footer(text=f"Covered under {LICENSE} or Ultralytics Enterprise Licensing {ULTRA_LICENSING}\n", icon_url=YOLO_LOGO)
                     
                     _ = options[k].update({SUB_CAT.strip(string.punctuation).capitalize():embed})
