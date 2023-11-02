@@ -14,6 +14,7 @@ from discord import File
 from UltralyticsBot import GH
 from UltralyticsBot.utils.general import dec2str, align_boxcoord, is_link
 
+NEWLINE = '\n' # use with f-strings
 BOX_LJUST = 24 # Box coordinates will always be -> '(1234, 1234, 1234, 1234)'
 # NOTE confidence values don't need justification, will always use 0.123
 # NOTE class name will need to dynamically justify
@@ -34,6 +35,10 @@ def gen_title(CL:int):
 
 def gen_line(cls_name:str, CL:int, conf:float, x1:int, y1:int, x2:int, y2:int):
     return '{} {}  {}\n'.format(cls_name.ljust(CL), dec2str(conf), align_boxcoord([x1,y1,x2,y2]).ljust(BOX_LJUST))
+
+def get_args(args:list, chr:str=" ", n:int=1) -> list[str]:
+    """Split string with character `chr` and return list values after `n`, defaults are `chr=' '` (space) and `n=1`"""
+    return args.split(chr)[n:]
 
 class ResponseMsg():
     def __init__(self, api_reply:requests.models.Response, plot:bool, txt:bool, ratio:float=1.0, **kwargs) -> None:
