@@ -91,6 +91,7 @@ Global:
     name: &prdN Predict
     slash_cmd: &prdcmd /predict
     description: &prddes Runs inference on image link provided.
+    content: null
     parameters:
       img_url:
         description: Full URL to image file.
@@ -160,39 +161,45 @@ Global:
 
   docs_modes: 
     name: Docs - Modes
-    slash_cmd: /docs_modes
-    description: Generates message embed for quick reference to Ultralytics Modes (predict, validate, export, etc.) Documentation.
-    parameters: [] # List of sub-section choices
+    slash_cmd: /modes
+    description: Reference Ultralytics Modes (predict, validate, export, etc.) Documentation.
+    content: null
+    parameters: null # List of sub-section choices
   
   docs_tasks: 
     name: Docs - Tasks
     slash_cmd: /docs_tasks
-    description: Generates message embed for quick reference to Ultralytics Task (detect, segment, pose, etc.) Documentation.
-    parameters: [] # List of sub-section choices
+    description: Reference Ultralytics Task (detect, segment, pose, etc.) Documentation.
+    content: null
+    parameters: null # List of sub-section choices
   
   docs_models: 
     name: Docs - Models
     slash_cmd: /docs_models
-    description: Generates message embed for quick reference to Ultralytics Models (YOLOv5, YOLOv8, RDETR, etc.) Documentation.
-    parameters: [] # List of sub-section choices
+    description: Reference Ultralytics Models (YOLOv5, YOLOv8, RDETR, etc.) Documentation.
+    content: null
+    parameters: null # List of sub-section choices
   
   docs_datasets: 
     name: Docs - Datasets
     slash_cmd: /docs_datasets
-    description: Generates message embed for quick reference to Ultralytics Datasets (detection, segmentation, classify, etc.) Documentation.
-    parameters: [] # List of sub-section choices
+    description: Reference Ultralytics Datasets (detection, segmentation, classify, etc.) Documentation.
+    content: null
+    parameters: null # List of sub-section choices
   
   docs_guides: 
     name: Docs - Guides
     slash_cmd: /docs_guides
-    description: Generates message embed for quick reference to Ultralytics Guides Documentation.
-    parameters: [] # List of sub-section choices
+    description: Reference Ultralytics Guides Documentation.
+    content: null
+    parameters: null # List of sub-section choices
 
   docs_integrations: 
     name: Docs - Integrations
     slash_cmd: /docs_integrations
-    description: Generates message embed for quick reference to Ultralytics Integrations (3rd party integrations) Documentation.
-    parameters: [] # List of sub-section choices
+    description: Reference Ultralytics Integrations (3rd party integrations) Documentation.
+    content: null
+    parameters: null # List of sub-section choices
 
   # TEMPLATE: 
   #   name: 
@@ -216,6 +223,12 @@ Dev:
         optional: False
         default: null
         type: (str)
+  cmd_sync: 
+    name: cmd_sync
+    slash_cmd: /cmd_sync
+    description: Use to sync commands to local server.
+    content: 
+    parameters: 
 
 Links:
   Bot_GH: &botGH https://github.com/Burhan-Q/Ultralytics_DiscordBot
@@ -227,4 +240,5 @@ Links:
   #   name: 
   #   slash_cmd: 
   #   description: 
+  #   content: 
   #   parameters: 
