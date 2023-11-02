@@ -5,13 +5,10 @@ Date: 2023-11-01
 
 Requires: discord.py, pyyaml
 """
-
+import re
 import string
-# import enum
 import subprocess
 from pathlib import Path
-# from dataclasses import dataclass
-# from typing import Literal
 
 import yaml
 import discord
@@ -19,6 +16,8 @@ from discord import app_commands
 
 from UltralyticsBot import BOT_ID
 from UltralyticsBot.utils.logging import Loggr
+
+MD_LINK_RGX = r"\#+\W\[\w+\]\((h|H)ttp(s)?://.*\)" # For headers specifically
 
 DOCS_URL = "https://docs.ultralytics.com/"
 GH_REPO = "https://github.com/ultralytics/ultralytics.git"
@@ -64,12 +63,16 @@ def get_dataset_files(ds_path:Path):
     tasks = [p for p in ds_path.iterdir() if p.is_dir()]
     return [next(task.glob("index.md")) for task in tasks]
 
+def no_header_links(md_header:str):
+    """Removes Markdown Header links and only returns header text."""
+    return md_header.split(']')[0].replace('[', '') if re.search(MD_LINK_RGX, md_header) else md_header
+
 def get_md_headers(md_content:list):
     """Gets Markdown headers text, ignoring code-block comment lines"""
     headers = {k:v for k,v in enumerate(md_content) if v.startswith('#')}
     codeblcks = [k for k,v in enumerate(md_content) if v.startswith('```')]
     code_idx = list(zip(codeblcks[::2],codeblcks[1::2]))
-    return [ht for h,ht in headers.items() if not any([c[0] < h < c[1] for c in code_idx])]
+    return [no_header_links(ht) for h,ht in headers.items() if not any([c[0] < h < c[1] for c in code_idx])]
 
 def fetch_gh_docs(repo:str=GH_REPO, local_docs:str=LOCAL_DOCS) -> tuple[Path, subprocess.CompletedProcess]:
     """Fetch docs from repo; defaults are Ultralytics Repo and `Path.home() / repo_data` respectively."""
