@@ -230,6 +230,15 @@ Dev:
     content: 
     parameters: 
 
+DevMsgs:
+  - $newstatus # $newstatus, Activity (one of 'watch', 'listen', 'play', ...), Name (delim with commas)
+  - $cmd_sync # args: NONE | all; (delim w/ space; NONE sync for guild only)
+  - $rm_cmd # arg: CMD
+  - $add_cmd # arg: CMD
+GlobalMsgs:
+  - $predict # args: IMG_URL (or attachment; delim w/ space)
+  - $docs # args: TOPIC SECTION (delim w/ space ' ')
+
 Links:
   Bot_GH: &botGH https://github.com/Burhan-Q/Ultralytics_DiscordBot
   Ultralytics: &ultra https://www.ultralytics.com/
