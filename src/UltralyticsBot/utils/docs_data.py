@@ -33,7 +33,7 @@ LOGO_ICON = "https://raw.githubusercontent.com/ultralytics/assets/main/logo/Ultr
 INTGR8_BANNER = "https://raw.githubusercontent.com/ultralytics/assets/main/yolov8/banner-integrations.png"
 BGRD_LOGO = "https://raw.githubusercontent.com/ultralytics/assets/main/im/banner-ultralytics-github.png"
 FULL_LOGO = "https://raw.githubusercontent.com/ultralytics/assets/main/logo/Ultralytics-logotype-color.png"
-YOLO_LOGO = "https://assets-global.website-files.com/646dd1f1a3703e451ba81ecc/64994922cf2a6385a4bf4489_UltralyticsYOLO_mark_blue.svg"
+YOLO_LOGO = "https://raw.githubusercontent.com/ultralytics/assets/main/logo/discord/emote-Ultralytics_YOLO_Logomark.png"
 
 CATEGORIES = ['Modes', 'Tasks', 'Models', 'Datasets', 'Guides', 'Integrations']
 
@@ -82,14 +82,34 @@ def fetch_gh_docs(repo:str=GH_REPO, local_docs:str=LOCAL_DOCS) -> tuple[Path, su
     repo_name = repo.strip('.git').split("/")[-1]
     if (save_path / repo_name).exists():
         save_path = save_path / repo_name
-        # cmd = ['git', 'fetch', repo]
-        cmd = ['git', 'fetch']
+        cmd = ['git', 'merge']
     else:
         cmd = ['git', 'clone', repo]
     proc_run = subprocess.run(cmd, cwd=save_path, capture_output=True, text=True) # "Cloning into 'ultralytics'...\n", from `.stderr`, not certain how to capture more; `returncode == 0` should be successful
     return save_path, proc_run
 
-def docs_choices() -> tuple[dict, dict]:
+def yaml_2_embeds(file:str|Path) -> tuple[dict,dict]:
+    """Reads YAML file and generates `discord.Embeds` and `discord.app_choices.Choice` objects. Output order is `choices, embeds` both as dictionaries. If YAML file doesn't have correct name, will raise a generic `Exception`."""
+    file = Path(file)
+    category = file.stem.capitalize() if file.stem.capitalize() in CATEGORIES else None
+
+    if category:
+        data = yaml.safe_load(file.read_text('utf-8'))
+        options = list()
+        embeds, opts = dict(), dict()
+        for k,v in data.items():
+            embeds.update({k:discord.Embed.from_dict(v)})
+            options.append(app_commands.Choice(name=k, value=k))
+        
+        embeds_out = {category:embeds}
+        opts = {category:options}
+
+        return opts, embeds_out
+    
+    elif category is None:
+        raise Exception(f"No Docs category named matching {file.as_posix()}")
+
+def docs_choices(to_file:bool=False) -> tuple[dict, dict]|None:
     """Fetches data from repo and crawls the Docs files for generating links to pages+sections of the Docs as Discord Embeds. First dictionary are the `discord.app_command.Choices` and the second include the `discord.Embed` objects."""
     Loggr.info(f"Fetching data from {GH_REPO} for documentation.")
     into_path, run_result = fetch_gh_docs()
@@ -138,44 +158,28 @@ def docs_choices() -> tuple[dict, dict]:
                         section_link = md_index_2link(section, base_URL)
                         _ = embed.set_author(name="UltralyticsBot")
                         _ = embed.add_field(name=section_name, value=f"[Go to section]({section_link})", inline=False) # NOTE inline fields get smooshed and look bad, don't use
-                        _ = embed.set_footer(text=f"Covered under {LICENSE} or Ultralytics Enterprise Licensing {ULTRA_LICENSING}\n", icon_url=YOLO_LOGO)
+                        _ = embed.set_footer(text=f"{LICENSE} or Ultralytics Enterprise Licensing {ULTRA_LICENSING}\n", icon_url=YOLO_LOGO)
                     
                     _ = options[k].update({SUB_CAT.strip(string.punctuation).capitalize():embed})
     
-    # Generate dictionary for use with app_commands.choices                
-    opts_d = dict()
-    for k,v in options.items():
-        opts_d.update({k:[app_commands.Choice(name=kk, value=kk) for kk in v]})
+    # Output to file
+    ## NOTE app_command.choices dictionary is made when loading YAML file with yaml_2_embeds()
+    if to_file:
+        for k,v in options.items():
+            embeds_file = into_path.parent / f'{k}.yaml'
+            _ = embeds_file.write_text(yaml.safe_dump({kk:vv.to_dict() for kk,vv in v.items()}),encoding='utf-8')
     
-    return opts_d, options
+    # Generate dictionary for use with app_commands.choices
+    else:
+        opts_d = dict()
+        for k,v in options.items():
+            opts_d.update({k:[app_commands.Choice(name=kk, value=kk) for kk in v]})
+    
+        return opts_d, options
     # app_commands.choices(**opts_d) # NOTE this might work as @decorator
 
 if __name__ == '__main__()':
     docs_choices()
-
-# NOTE these were other options attempted for use with app_commands.choices 
-# @dataclass
-# class Options:
-#     ...
-# opt = Options()
-# for k,v in options.items():
-#     setattr(opt, k, [dict(name=kk, value=vv) for kk,vv in v.items()])
-#     ...
-
-# opts = list()
-# for k,v in options.items():
-#     opts.append({k:[dict(name=kk, value=kk) for kk in v]})
-
-
-# SECTIONS = [o for o in options]
-# SUB_SECTION = [k for o in options for k in options[o]]
-# for o in opts:
-#     app_commands.choices(**o)
-
-# class Sections(enum.Enum):
-#     def __init__(self, **kwargs):
-#         _ = [setattr(self, k, v) for k,v in kwargs.items()]
-
 
 # ###------REFERENCE------###
 # embed = discord.Embed(
