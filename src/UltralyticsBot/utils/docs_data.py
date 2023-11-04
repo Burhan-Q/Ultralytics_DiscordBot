@@ -14,7 +14,7 @@ import yaml
 import discord
 from discord import app_commands
 
-from UltralyticsBot import BOT_ID
+from UltralyticsBot import BOT_ID, REPO_DIR
 from UltralyticsBot.utils.logging import Loggr
 
 MD_LINK_RGX = r"\#+\W\[\w+\]\((h|H)ttp(s)?://.*\)" # For headers specifically
@@ -27,7 +27,7 @@ LICENSE = "AGPL-3.0"
 DOCS_DIR = "docs"
 DOCS_IDX = "mkdocs" # mkdocs.yml
 YAML_EXT = ['.yaml', '.yml']
-LOCAL_DOCS = "repo_data" # Directory name for local documentation files
+LOCAL_DOCS = REPO_DIR if any(REPO_DIR) else "repo_data" # Directory name for local documentation files
 
 LOGO_ICON = "https://raw.githubusercontent.com/ultralytics/assets/main/logo/Ultralytics-logomark-color.png"
 INTGR8_BANNER = "https://raw.githubusercontent.com/ultralytics/assets/main/yolov8/banner-integrations.png"
