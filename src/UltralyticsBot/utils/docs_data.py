@@ -85,7 +85,9 @@ def fetch_gh_docs(repo:str=GH_REPO, local_docs:str=LOCAL_DOCS) -> tuple[Path, su
         cmd = ['git', 'merge']
     else:
         cmd = ['git', 'clone', repo]
-    proc_run = subprocess.run(cmd, cwd=save_path, capture_output=True, text=True) # "Cloning into 'ultralytics'...\n", from `.stderr`, not certain how to capture more; `returncode == 0` should be successful
+    # proc_run = subprocess.run(cmd, cwd=save_path, capture_output=True, text=True) # "Cloning into 'ultralytics'...\n", from `.stderr`, not certain how to capture more; `returncode == 0` should be successful
+    proc_run = subprocess.call(cmd, cwd=save_path, capture_output=True, text=True) # blocking
+    save_path = save_path / repo_name # update for output
     return save_path, proc_run
 
 def yaml_2_embeds(file:str|Path) -> tuple[dict,dict]:
@@ -118,6 +120,7 @@ def docs_choices(to_file:bool=False) -> tuple[dict, dict]|None:
 
     # Read MKDOCS index
     docs_idx = [f for f in [(into_path / DOCS_IDX).with_suffix(y) for y in YAML_EXT] if f.exists()]
+    Loggr.info(f"Searching for documentation index file in {into_path.as_posix()}")
     assert any(docs_idx), f"Unable to locate mkdocs index file in {into_path.as_posix()} repo directory."
     
     text_data = docs_idx[0].read_text('utf-8').splitlines()
