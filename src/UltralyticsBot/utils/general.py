@@ -20,6 +20,12 @@ from UltralyticsBot.utils.checks import is_img_link, is_link, URL_RGX
 
 TEMPFILE = 'detect_result' # fallback
 
+def files_age(fpath:Path, age_lim:int=24) -> bool:
+    """Check if _any_ files in path provided are older than `age_lim` in hours, default is 24 hours."""
+    times = np.array([[getattr(f.stat(), a) for a in ['st_ctime','st_mtime','st_atime']] for f in fpath.rglob("*")])
+    age = np.diff(times, axis=1) / 3600 # convert to hours
+    return bool((age > age_lim).any())
+
 def align_boxcoord(pxl_coords:list|tuple) -> str:
     """Creates string from pixel-space bounding box coordinates and right aligns coordinates."""
     return f'{str(tuple(str(coor).rjust(4) for coor in pxl_coords))}'.replace("'","")

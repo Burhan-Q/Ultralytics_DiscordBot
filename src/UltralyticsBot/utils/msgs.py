@@ -14,6 +14,7 @@ from discord import File
 from UltralyticsBot import GH
 from UltralyticsBot.utils.general import dec2str, align_boxcoord, is_link
 
+NEWLINE = '\n' # use with f-strings
 BOX_LJUST = 24 # Box coordinates will always be -> '(1234, 1234, 1234, 1234)'
 # NOTE confidence values don't need justification, will always use 0.123
 # NOTE class name will need to dynamically justify
@@ -35,6 +36,10 @@ def gen_title(CL:int):
 def gen_line(cls_name:str, CL:int, conf:float, x1:int, y1:int, x2:int, y2:int):
     return '{} {}  {}\n'.format(cls_name.ljust(CL), dec2str(conf), align_boxcoord([x1,y1,x2,y2]).ljust(BOX_LJUST))
 
+def get_args(args:list, chr:str=" ", n:int=1) -> list[str]:
+    """Split string with character `chr` and return list values after `n`, defaults are `chr=' '` (space) and `n=1`"""
+    return args.split(chr)[n:]
+
 class ResponseMsg():
     def __init__(self, api_reply:requests.models.Response, plot:bool, txt:bool, ratio:float=1.0, **kwargs) -> None:
         super().__init__(**kwargs)
@@ -53,19 +58,19 @@ class ResponseMsg():
             setattr(self, k, self.reply_dict[k])
         
         self.msg = f'''{getattr(self, 'message')}\n'''
-        self.cls_pad = longest(self.data)
+        self.cls_pad = 2 if not any(self.data) else longest(self.data)
     
     def start_msg(self, plt_fn:Callable, infer_ratio:float=1.0, highlight:str=''):
         self.ratio = infer_ratio if self.ratio == 1.0 else self.ratio
         
         if self.reason == 'OK' or self.code == 200:
             self.msg += IMGSZ_MSG.format(self.ratio) if self.ratio != 1.0 and self.txt else ''
-            self.cls_pad = longest(self.data)
+            # self.cls_pad = 2 if not any(self.data) else longest(self.data)
             self.msg += '```{}\n'.format(highlight) if self.txt else ''
             self.msg += gen_title(self.cls_pad) if self.txt else ''
             
             self.anno_im, self.result_txt = plt_fn(predictions=self.data)
-            self.msg += (self.result_txt + '```' ) if self.txt else ''
+            self.msg += (self.result_txt + '```' ) if self.txt and self.result_txt != '' else ''
         else:
             self.anno_im = None
             self.msg = API_ERR_MSG.format(self.code, self.reason)

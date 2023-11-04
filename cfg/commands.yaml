@@ -91,6 +91,7 @@ Global:
     name: &prdN Predict
     slash_cmd: &prdcmd /predict
     description: &prddes Runs inference on image link provided.
+    content: null
     parameters:
       img_url:
         description: Full URL to image file.
@@ -156,7 +157,55 @@ Global:
 
       `msgexample` :: A few examples on how to use UltralyticsBot via messages.
 
-    parameters: 
+    parameters: null
+
+  docs_modes: 
+    name: Docs - Modes
+    slash_cmd: /modes
+    description: Reference Ultralytics Modes (predict, validate, export, etc.) Documentation.
+    content: null
+    parameters: null # List of sub-section choices
+  
+  docs_tasks: 
+    name: Docs - Tasks
+    slash_cmd: /docs_tasks
+    description: Reference Ultralytics Task (detect, segment, pose, etc.) Documentation.
+    content: null
+    parameters: null # List of sub-section choices
+  
+  docs_models: 
+    name: Docs - Models
+    slash_cmd: /docs_models
+    description: Reference Ultralytics Models (YOLOv5, YOLOv8, RDETR, etc.) Documentation.
+    content: null
+    parameters: null # List of sub-section choices
+  
+  docs_datasets: 
+    name: Docs - Datasets
+    slash_cmd: /docs_datasets
+    description: Reference Ultralytics Datasets (detection, segmentation, classify, etc.) Documentation.
+    content: null
+    parameters: null # List of sub-section choices
+  
+  docs_guides: 
+    name: Docs - Guides
+    slash_cmd: /docs_guides
+    description: Reference Ultralytics Guides Documentation.
+    content: null
+    parameters: null # List of sub-section choices
+
+  docs_integrations: 
+    name: Docs - Integrations
+    slash_cmd: /docs_integrations
+    description: Reference Ultralytics Integrations (3rd party integrations) Documentation.
+    content: null
+    parameters: null # List of sub-section choices
+
+  # TEMPLATE: 
+  #   name: 
+  #   slash_cmd: 
+  #   description: 
+  #   parameters: 
 
 Dev:
   status_change:
@@ -174,9 +223,31 @@ Dev:
         optional: False
         default: null
         type: (str)
+  cmd_sync: 
+    name: cmd_sync
+    slash_cmd: /cmd_sync
+    description: Use to sync commands to local server.
+    content: 
+    parameters: 
+
+DevMsgs:
+  - $newstatus # $newstatus, Activity (one of 'watch', 'listen', 'play', ...), Name (delim with commas)
+  - $cmd_sync # args: NONE | all; (delim w/ space; NONE sync for guild only)
+  - $rm_cmd # arg: CMD
+  - $add_cmd # arg: CMD
+GlobalMsgs:
+  - $predict # args: IMG_URL (or attachment; delim w/ space)
+  - $docs # args: TOPIC SECTION (delim w/ space ' ')
 
 Links:
   Bot_GH: &botGH https://github.com/Burhan-Q/Ultralytics_DiscordBot
   Ultralytics: &ultra https://www.ultralytics.com/
   Ultralytics_GH: &ultraGH https://github.com/ultralytics
   Ultralytics_HUB: &ultraHUB https://hub.ultralytics.com/signup?utm_source=GitHub&utm_medium=BotReadme
+
+  # TEMPLATE: 
+  #   name: 
+  #   slash_cmd: 
+  #   description: 
+  #   content: 
+  #   parameters: 
