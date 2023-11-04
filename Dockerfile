@@ -5,6 +5,12 @@ COPY requirements.txt /bot/
 WORKDIR /bot
 # below might not be required if switched to headless install for opencv
 RUN apt-get update && apt-get install --no-install-recommends -y libgl1 libglib2.0-0 libsm6 libxrender1 libxext6
+
+# Create directory for docs and clone repo
+RUN mkdir ~/repo_data
+RUN git -C ~/repo_data clone https://github.com/ultralytics/ultralytics.git
+
+# Install app requirements
 RUN pip install -r requirements.txt
 COPY . .
 CMD ["python3", "src/bot.py"]
