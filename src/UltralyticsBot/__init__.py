@@ -35,7 +35,7 @@ MAX_REQ = REQ_CFG['max_req']
 
 # Docker config
 DOCKER_CFG = yaml.safe_load((PROJ_ROOT / 'compose.yaml').read_text('utf-8'))
-REPO_DIR = DOCKER_CFG['REPO_DIR'].strip().lower()
+REPO_DIR = DOCKER_CFG['services']['bot']['args']['REPO_DIR'].strip().lower()
 
 ASSETS = PROJ_ROOT / 'assets'
 
