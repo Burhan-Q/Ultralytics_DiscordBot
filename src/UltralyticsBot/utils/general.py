@@ -172,23 +172,28 @@ class ReqImage:
         return (len(self.imdata) / (1024 ** 2))
     
     def get_image(self):
-        self.imdata = requests.get(self.im_url).content if self.im_url is not None else None
+        # self.imdata = requests.get(self.im_url).content if self.im_url is not None else None
         try:
+            self.imdata = requests.get(self.im_url).content if self.im_url is not None else None
             if self.im_url is not None and self.imdata is not None:
                 self.image = make_3ch_img(cv.imdecode(np.frombuffer(self.imdata, np.uint8), -1))
                 self.__source_img = np.copy(self.image)
                 self.height, self.width = self.image.shape[:2]
             else:
                 self.image_error = True
-                Loggr.debug(f"Problem retrieving source image from data for URL {self.im_url}")
+                Loggr.debug(f"Problem retrieving source image from data for URL {self.__source_url}")
         
         except SyntaxError: # incorrect bytes string will raise this
             self.image_error = True
-            Loggr.error(f"Syntax error for data retrieved from URL {self.im_url} when attempting to generate source image")
+            Loggr.error(f"Syntax error for data retrieved from URL {self.__source_url} when attempting to generate source image")
+
+        except requests.exceptions.RequestException as R:
+            self.image_error = True
+            Loggr.error(f"Error encountered when fetching image data: [ {R} ]")
     
         except Exception as e: # all other error types
             self.image_error = True
-            Loggr.error(f"Error {e} occurred when attempting to generate image from data for URL {self.im_url}")
+            Loggr.error(f"Error {e} occurred when attempting to fetch image from data for URL {self.__source_url}")
     
     def inference_img(self, infer_size:int=640, enc:str='.jpeg', Q:int=60) -> tuple[np.ndarray, bytes, float]:
         """Generates inference image by resizing and compressing data as required. Returns inference image, image bytes, and resized ratio."""
