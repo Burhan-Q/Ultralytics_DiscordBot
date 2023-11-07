@@ -8,7 +8,7 @@ Requires: discord.py, pyyaml, numpy, requests, opencv-python
 import discord
 from discord import app_commands
 
-from UltralyticsBot import BOT_TOKEN, OWNER_ID, DEV_GUILD
+from UltralyticsBot import BOT_TOKEN, OWNER_ID, DEV_GUILD, BOT_ID
 from UltralyticsBot.cmds.client import MyClient
 from UltralyticsBot.cmds.actions import msg_predict, im_predict, chng_status, ACTIVITIES, about, commands, help, slash_example, msgexample, fetch_embed
 from UltralyticsBot.utils.logging import Loggr
@@ -33,11 +33,9 @@ def main():
 
     @client.event
     async def on_message(message:discord.Message):
-        author, guild, content = [getattr(message, a) for a in ['author', 'guild', 'content']]
-        # author = message.author # TODO remove
-        # guild = message.guild
-        # content = message.content
+        author, guild, content, mentions = [getattr(message, a) for a in ['author', 'guild', 'content', 'mentions']]
         is_owner = author.id == OWNER_ID
+        bot_mention = any([b.id == BOT_ID for b in mentions])
         args = get_args(content)
 
         # DEV Command
@@ -76,7 +74,7 @@ def main():
             await message.reply(f"Removed the {args} command from server {guild.name}")
         
         # GLOBAL Command
-        elif content.startswith("$predict"):
+        elif content.startswith("$predict") or bot_mention:
             await msg_predict(message)
 
         elif content.startswith("$docs"):
