@@ -81,12 +81,11 @@ def fetch_gh_docs(repo:str=GH_REPO, local_docs:str=LOCAL_DOCS) -> tuple[Path, su
     save_path.mkdir() if not save_path.exists() else None
     repo_name = repo.strip('.git').split("/")[-1]
     if (save_path / repo_name).exists():
-        save_path = save_path / repo_name
         cmd = ['git', 'merge']
     else:
         cmd = ['git', 'clone', repo]
     # proc_run = subprocess.run(cmd, cwd=save_path, capture_output=True, text=True) # "Cloning into 'ultralytics'...\n", from `.stderr`, not certain how to capture more; `returncode == 0` should be successful
-    proc_run = subprocess.call(cmd, cwd=save_path, capture_output=True, text=True) # blocking
+    proc_run = subprocess.call(cmd, cwd=save_path, text=True) # blocking
     save_path = save_path / repo_name # update for output
     return save_path, proc_run
 
