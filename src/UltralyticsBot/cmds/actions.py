@@ -17,9 +17,9 @@ from discord import app_commands
 from UltralyticsBot import REQ_LIM, REQ_ENDPOINT, CMDS, RESPONSE_KEYS, HUB_KEY, DEFAULT_INFER, BOT_ID, OWNER_ID, GH, MAX_REQ
 from UltralyticsBot.utils.checks import model_chk
 from UltralyticsBot.utils.logging import Loggr
-from UltralyticsBot.utils.general import ReqImage, ReqMessage, attach_file, files_age
+from UltralyticsBot.utils.general import ReqImage, attach_file, files_age
 from UltralyticsBot.utils.plotting import nxy2xy, xcycwh2xyxy, rel_line_size, draw_all_boxes
-from UltralyticsBot.utils.msgs import IMG_ERR_MSG, API_ERR_MSG, NOT_OWNER, gen_line, ResponseMsg, NEWLINE
+from UltralyticsBot.utils.msgs import IMG_ERR_MSG, API_ERR_MSG, NOT_OWNER, gen_line, ReqMessage, ResponseMsg, NEWLINE
 from UltralyticsBot.cmds.client import MyClient
 
 TEMPFILE = 'detect_res.png' # fallback

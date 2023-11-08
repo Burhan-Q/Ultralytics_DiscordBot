@@ -6,7 +6,7 @@ Date: 2023-10-10
 Requires: discord.py, pyyaml, numpy, requests, opencv-python
 """
 import io
-import re
+# import re
 from pathlib import Path
 
 import requests
@@ -14,9 +14,9 @@ import cv2 as cv
 import numpy as np
 import discord
 
-from UltralyticsBot import BOT_ID
+# from UltralyticsBot import BOT_ID
 from UltralyticsBot.utils.logging import Loggr
-from UltralyticsBot.utils.checks import is_img_link, is_link, URL_RGX
+from UltralyticsBot.utils.checks import is_img_link, is_link #, URL_RGX
 
 TEMPFILE = 'detect_result' # fallback
 
@@ -212,90 +212,91 @@ class ReqImage:
 # Large test image "https://i.imgur.com/pDNOqoa.png"
 # Normal test image "https://raw.githubusercontent.com/ultralytics/ultralytics/main/ultralytics/assets/bus.jpg"
 
-class ReqMessage:
-    """
-    Attributes
-    ---
-    msg - ``discord.Message``
-        Discord message for inference request.
+# TODO remove, relocated to utils/msgs.py
+# class ReqMessage:
+#     """
+#     Attributes
+#     ---
+#     msg - ``discord.Message``
+#         Discord message for inference request.
 
-    url - ``str`` | ``None``
-        URL string when `self.msg` contains valid URL, otherwise ``None``.
+#     url - ``str`` | ``None``
+#         URL string when `self.msg` contains valid URL, otherwise ``None``.
 
-    author - ``discord.Message.author`` | ``None``
-        Discord message author.
+#     author - ``discord.Message.author`` | ``None``
+#         Discord message author.
 
-    mentions - ``list``
-        List of mentioned users in `self.msg`.
+#     mentions - ``list``
+#         List of mentioned users in `self.msg`.
 
-    media - ``list[discord.Attachment]``
-        List of media attached to `self.msg`.
+#     media - ``list[discord.Attachment]``
+#         List of media attached to `self.msg`.
 
-    im_width - ``int`` | ``None``
-        Width in pixels of image attched to `self.msg` if any, otherwise ``None``.
+#     im_width - ``int`` | ``None``
+#         Width in pixels of image attched to `self.msg` if any, otherwise ``None``.
 
-    im_height - ``int`` | ``None``
-        Height in pixels of image attched to `self.msg` if any, otherwise ``None``.
+#     im_height - ``int`` | ``None``
+#         Height in pixels of image attched to `self.msg` if any, otherwise ``None``.
 
-    has_url - ``bool``
-        Is `True` when text from `self.msg` contains what appears to be valid URL string, otherwise `False`.
+#     has_url - ``bool``
+#         Is `True` when text from `self.msg` contains what appears to be valid URL string, otherwise `False`.
 
-    has_media - ``bool``
-        Is `True` when `self.msg` contains any attachments, otherwise `False`.
+#     has_media - ``bool``
+#         Is `True` when `self.msg` contains any attachments, otherwise `False`.
 
-    has_text - ``bool``
-        Is `True` when `self.msg` contains text other than triggering-keywords and whitespace, otherwise `False`.
+#     has_text - ``bool``
+#         Is `True` when `self.msg` contains text other than triggering-keywords and whitespace, otherwise `False`.
 
-    has_img - ``bool``
-        Is `True` when `self.msg` has attachment with content type 'image', otherwise `False`
+#     has_img - ``bool``
+#         Is `True` when `self.msg` has attachment with content type 'image', otherwise `False`
 
-    bot_mention - ``bool``
-        Is `True` when `self.msg` contains bot-user mention/tag, otherwise `False`.
+#     bot_mention - ``bool``
+#         Is `True` when `self.msg` contains bot-user mention/tag, otherwise `False`.
 
-    Methods
-    ---
-    check_message() - Executes during `__init__` and populates attributes from `discord.Message`
+#     Methods
+#     ---
+#     check_message() - Executes during `__init__` and populates attributes from `discord.Message`
 
-    get_url() - If attributes not populated, executes `check_message()` then returns first URL as ``str`` found in `discord.Message.content`, otherwise returns ``None``.
-    """
-    commands = ['predict', 'help', 'about', 'hub'] # NOTE maybe pull from YAML instead
+#     get_url() - If attributes not populated, executes `check_message()` then returns first URL as ``str`` found in `discord.Message.content`, otherwise returns ``None``.
+#     """
+#     commands = ['predict', 'help', 'about', 'hub'] # NOTE maybe pull from YAML instead
     
-    def __init__(self, msg:discord.Message) -> None:
-        self.msg = msg
-        self.url = self.author = self.mentions = self.media = None
-        self.im_height = self.im_width = self.attached_im = self.img_size = None
-        self.has_url = self.has_media = self.has_text = self.has_img = self.bot_mention = False
-        self.check_message()
+#     def __init__(self, msg:discord.Message) -> None:
+#         self.msg = msg
+#         self.url = self.author = self.mentions = self.media = None
+#         self.im_height = self.im_width = self.attached_im = self.img_size = None
+#         self.has_url = self.has_media = self.has_text = self.has_img = self.bot_mention = False
+#         self.check_message()
         
-    def check_message(self) -> None:
-        self.has_text = isinstance(self.msg.content,str) and any(self.msg.content.replace("$predict","").strip())
-        self.media = self.msg.attachments if any(self.msg.attachments) else []
+#     def check_message(self) -> None:
+#         self.has_text = isinstance(self.msg.content,str) and any(self.msg.content.replace("$predict","").strip())
+#         self.media = self.msg.attachments if any(self.msg.attachments) else []
         
-        self.has_url = is_link(self.msg.content) if self.has_text else False
-        self.has_img = (['image' in a.content_type for a in self.media]) if any(self.media) else False
+#         self.has_url = is_link(self.msg.content) if self.has_text else False
+#         self.has_img = (['image' in a.content_type for a in self.media]) if any(self.media) else False
         
-        self.author = self.msg.author
-        self.mentions = self.msg.mentions
-        self.bot_mention = BOT_ID in [m.id for m in self.mentions]
+#         self.author = self.msg.author
+#         self.mentions = self.msg.mentions
+#         self.bot_mention = BOT_ID in [m.id for m in self.mentions]
         
-        if self.has_text and self.has_url:
-            self.url = re.search(URL_RGX, self.msg.content, re.IGNORECASE).group()
+#         if self.has_text and self.has_url:
+#             self.url = re.search(URL_RGX, self.msg.content, re.IGNORECASE).group()
         
-        elif self.has_img:
-            self.attached_im = [a for a in self.media if 'image' in a.content_type][0] # only allow one image
-            self.url = self.attached_im.url
-            self.im_height, self.im_width = self.attached_im.height, self.attached_im.width
-            self.img_size = self.attached_im.size / (1024 ** 2)
+#         elif self.has_img:
+#             self.attached_im = [a for a in self.media if 'image' in a.content_type][0] # only allow one image
+#             self.url = self.attached_im.url
+#             self.im_height, self.im_width = self.attached_im.height, self.attached_im.width
+#             self.img_size = self.attached_im.size / (1024 ** 2)
     
-    def get_url(self) -> str:
-        _ = self.check_message() if self.url is None else None
-        return self.url
+#     def get_url(self) -> str:
+#         _ = self.check_message() if self.url is None else None
+#         return self.url
     
-    def media_info(self) -> tuple[int|None,int|None,float|None]:
-        """If image was attached, returns image height, width, and file-size."""
-        return self.im_height, self.im_width, self.img_size
+#     def media_info(self) -> tuple[int|None,int|None,float|None]:
+#         """If image was attached, returns image height, width, and file-size."""
+#         return self.im_height, self.im_width, self.img_size
     
-class ResponseMsg():
-    def __init__(self, **kwargs) -> None:
-        super().__init__(**kwargs)
+# class ResponseMsg():
+#     def __init__(self, **kwargs) -> None:
+#         super().__init__(**kwargs)
         
