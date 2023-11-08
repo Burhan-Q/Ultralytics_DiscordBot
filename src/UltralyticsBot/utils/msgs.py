@@ -70,7 +70,7 @@ class ResponseMsg():
             self.msg += gen_title(self.cls_pad) if self.txt else ''
             
             self.anno_im, self.result_txt = plt_fn(predictions=self.data)
-            self.msg += (self.result_txt + '```' ) if self.txt and self.result_txt != '' else ''
+            self.msg += ((self.result_txt) if self.txt and self.result_txt != '' else '') + '```'
         else:
             self.anno_im = None
             self.msg = API_ERR_MSG.format(self.code, self.reason)
