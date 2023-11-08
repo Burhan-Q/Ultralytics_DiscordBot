@@ -17,9 +17,9 @@ from discord import app_commands
 from UltralyticsBot import REQ_LIM, REQ_ENDPOINT, CMDS, RESPONSE_KEYS, HUB_KEY, DEFAULT_INFER, BOT_ID, OWNER_ID, GH, MAX_REQ
 from UltralyticsBot.utils.checks import model_chk
 from UltralyticsBot.utils.logging import Loggr
-from UltralyticsBot.utils.general import ReqImage, ReqMessage, attach_file, files_age
+from UltralyticsBot.utils.general import ReqImage, attach_file, files_age
 from UltralyticsBot.utils.plotting import nxy2xy, xcycwh2xyxy, rel_line_size, draw_all_boxes
-from UltralyticsBot.utils.msgs import IMG_ERR_MSG, API_ERR_MSG, NOT_OWNER, gen_line, ResponseMsg, NEWLINE
+from UltralyticsBot.utils.msgs import IMG_ERR_MSG, API_ERR_MSG, NOT_OWNER, gen_line, ReqMessage, ResponseMsg, NEWLINE
 from UltralyticsBot.cmds.client import MyClient
 
 TEMPFILE = 'detect_res.png' # fallback
@@ -177,30 +177,31 @@ async def msgexample(interaction:discord.Interaction):
     msg = CMDS['Global']['msgexample']['content']
     await interaction.response.send_message(content=msg, suppress_embeds=True)
 
-class DocsCommands:
+# NOTE keep commented until finished to avoid throwing errors
+# class DocsCommands:
 
-    doc_choices, doc_embeds = dict(), dict()
+#     doc_choices, doc_embeds = dict(), dict()
 
-    def __init__(self, *args, **kwargs) -> None:
-        self.last_update = 0 # when where docs last updated
-        pass
+#     def __init__(self, *args, **kwargs) -> None:
+#         self.last_update = 0 # when where docs last updated
+#         pass
 
-    def get_docs_data(self, *args, **kwargs):
-        # files_age() # NOTE use to check if any docs file is older than 24 hours
-        ...
+#     def get_docs_data(self, *args, **kwargs):
+#         # files_age() # NOTE use to check if any docs file is older than 24 hours
+#         ...
 
-    @staticmethod
-    @app_commands.choices(sub_section=doc_choices['Tasks'])
-    @app_commands.describe(
-        sub_section="Task Documentation Subsection to generate embedding for.",
-        user="Username who should be mentioned in the response with embed."
-        )
-    async def docs_tasks(interaction:discord.Interaction,
-                         sub_section:app_commands.Choice[str],
-                         user:str=None):
-        doc_embed = DocsCommands.doc_embeds['Tasks'][sub_section.name]
-        mention = user if user is not None else ''
-        await interaction.response.send_message(content=mention, embed=doc_embed)
+#     @staticmethod
+#     @app_commands.choices(sub_section=doc_choices['Tasks'])
+#     @app_commands.describe(
+#         sub_section="Task Documentation Subsection to generate embedding for.",
+#         user="Username who should be mentioned in the response with embed."
+#         )
+#     async def docs_tasks(interaction:discord.Interaction,
+#                          sub_section:app_commands.Choice[str],
+#                          user:str=None):
+#         doc_embed = DocsCommands.doc_embeds['Tasks'][sub_section.name]
+#         mention = user if user is not None else ''
+#         await interaction.response.send_message(content=mention, embed=doc_embed)
 
 
 ###-----DEV COMMANDS-----###

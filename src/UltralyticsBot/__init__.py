@@ -14,6 +14,7 @@ ROOT = Path(__file__).parent
 PROJ_ROOT = ROOT.parent.parent
 GH = "https://github.com/Burhan-Q/Ultralytics_DiscordBot"
 
+# Secrets config
 SECRETS = yaml.safe_load((PROJ_ROOT / 'SECRETS/codes.yaml').read_text('utf-8'))
 BOT_TOKEN = SECRETS['apikey']
 BOT_ID = SECRETS['botID']
@@ -21,14 +22,20 @@ HUB_KEY = SECRETS['inferkey']
 OWNER_ID = SECRETS['ownerID']
 DEV_GUILD = SECRETS['devGuild']
 
+# Commands config
 CMDS = yaml.safe_load((PROJ_ROOT / 'cfg/commands.yaml').read_text('utf-8'))
 
+# Inference request config
 REQ_CFG = yaml.safe_load((PROJ_ROOT / 'cfg/req.yaml').read_text('utf-8'))
 DEFAULT_INFER = REQ_CFG['default']
 REQ_ENDPOINT = REQ_CFG['endpoint']
 REQ_LIM = REQ_CFG['limits']
 RESPONSE_KEYS = tuple(REQ_CFG['response'])
 MAX_REQ = REQ_CFG['max_req']
+
+# Docker config
+DOCKER_CFG = yaml.safe_load((PROJ_ROOT / 'compose.yaml').read_text('utf-8'))
+REPO_DIR = DOCKER_CFG['services']['bot']['args']['REPO_DIR'].strip().lower()
 
 ASSETS = PROJ_ROOT / 'assets'
 
