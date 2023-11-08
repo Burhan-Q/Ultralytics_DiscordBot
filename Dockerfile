@@ -5,7 +5,7 @@ COPY requirements.txt /bot/
 ARG REPO_DIR
 WORKDIR /bot
 # below might not be required if switched to headless install for opencv
-RUN apt-get update && apt-get install --no-install-recommends -y libgl1 libglib2.0-0 libsm6 libxrender1 libxext6
+RUN apt-get update && apt-get install --no-install-recommends -y git libgl1 libglib2.0-0 libsm6 libxrender1 libxext6
 
 # Create directory for docs and clone repo
 RUN mkdir ~/${REPO_DIR}
