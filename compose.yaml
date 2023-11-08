@@ -1,9 +1,10 @@
 services:
   bot:
-    build: .
     container_name: ubot
-    args:
-      REPO_DIR: repo_data
+    build: 
+      context: .
+      args:
+        REPO_DIR: repo_data
     volumes:
       - type: bind
         source: ./
