@@ -21,6 +21,7 @@ BOT_ID = SECRETS['botID']
 HUB_KEY = SECRETS['inferkey']
 OWNER_ID = SECRETS['ownerID']
 DEV_GUILD = SECRETS['devGuild']
+DEV_CH = SECRETS['devCh']
 
 # Commands config
 CMDS = yaml.safe_load((PROJ_ROOT / 'cfg/commands.yaml').read_text('utf-8'))
