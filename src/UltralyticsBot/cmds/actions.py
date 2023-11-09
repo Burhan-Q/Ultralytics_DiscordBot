@@ -114,7 +114,14 @@ async def msg_predict(message:discord.Message):
         await message.reply(text, file=file)
 
 ###-----Slash Commands-----###
-
+@app_commands.describe(
+        img_url='Valid HTTP/S link to a supported image type.',
+        show="Enable/disable showing annotated result image.",
+        conf="Confidence threshold for class predictions.",
+        iou="Intersection over union threshold for detections.",
+        size="Inference image size (single dimension only).",
+        model="One of YOLOv(5|8)(n|s|m|l|x) models to use for inference."
+)
 async def im_predict(interaction:discord.Interaction,
                          img_url:str,
                          show:bool=True,
