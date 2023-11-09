@@ -201,6 +201,13 @@ Global:
     content: null
     parameters: null # List of sub-section choices
 
+  docs_hub: 
+    name: Docs - HUB
+    slash_cmd: /docs_hub
+    description: Reference Ultralytics HUB Documentation.
+    content: null
+    parameters: null # List of sub-section choices
+
   # TEMPLATE: 
   #   name: 
   #   slash_cmd: 

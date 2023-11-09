@@ -16,7 +16,7 @@ from UltralyticsBot.utils.msgs import NOT_OWNER, NEWLINE, get_args
 from UltralyticsBot.utils.docs_data import docs_choices
 
 def main():
-    doc_choices, doc_embeds = docs_choices()
+    _ = docs_choices(True) # Stores information locally for client to load
     Loggr.info("Finished fetching docs.")
 
     intent = discord.Intents.default()
@@ -49,10 +49,12 @@ def main():
             if not any(args):
                 Loggr.info(f"Syncing the client for {guild}.")
                 try:
+                    Guild = await client.fetch_guild(guild.id)
+                    client.tree.copy_global_to(guild=Guild)
                     # [client.tree.add_command(c, guild=guild) for c in client.tree.get_commands()]
-                    syncd_cmds = await client.tree.sync(guild=guild)
-                    Loggr.info(f"Commands synced {[c.name for c in syncd_cmds]}")
-                    await message.reply(f"Commands synced {(NEWLINE + '- ').join([c.name for c in syncd_cmds])} for this server.")
+                    syncd_cmds = await client.tree.sync(guild=Guild)
+                    Loggr.info(f"Commands synced {[c.name for c in syncd_cmds]} to server {guild}.")
+                    await message.reply(f"Commands synced for server {NEWLINE}- {(NEWLINE + '- ').join([c.name for c in syncd_cmds])}")
                 except Exception as e:
                     Loggr.error(f"Syncing exception {e}")
             
@@ -61,7 +63,7 @@ def main():
                 try:
                     syncd_cmds = await client.tree.sync()
                     Loggr.info(f"Syncing commands: {[c.name for c in syncd_cmds]} to all servers.")
-                    await message.reply(f"The following commands were fetched: {[c.name for c in syncd_cmds]} for all servers.")
+                    await message.reply(f"Commands synced for all servers {NEWLINE}- {(NEWLINE + '- ').join([c.name for c in syncd_cmds])}")
                 except Exception as e:
                     Loggr.error(f"Syncing exception {e}")
 
@@ -78,7 +80,7 @@ def main():
             await msg_predict(message)
 
         elif content.startswith("$docs"):
-            section = doc_embeds.get(args[0], None)
+            section = client.docs_embeds.get(args[0], None)
             sub_sect = section.get(args[1]) if section is not None else None
             res = sub_sect if section and sub_sect else None
             await message.reply(embed=res) if isinstance(res, discord.Embed) else await message.reply("Couldn't find that!")
@@ -102,53 +104,61 @@ def main():
     #     await inter.response.send_message('\n'.join([c.name for c in client.tree.get_commands(guild=inter.guild)]))
     
     @client.GLOBAL_docs_tasks
-    @app_commands.choices(sub_section=list(doc_choices['Tasks']))
+    @app_commands.choices(sub_section=list(client.docs_choices['Tasks']))
     @app_commands.describe(sub_section="Task Documentation Subsection to generate embedding for.",user="Username who should be mentioned in the response with embed.")
     async def docs_tasks(interaction:discord.Interaction, sub_section:app_commands.Choice[str],user:str=None):
-        doc_embed = doc_embeds['Tasks'][sub_section.name]
+        doc_embed = client.docs_embeds['Tasks'][sub_section.name]
         mention = user if user is not None else ''
         await interaction.response.send_message(content=mention, embed=doc_embed)
  
     @client.GLOBAL_docs_modes
-    @app_commands.choices(sub_section=doc_choices['Modes'])
+    @app_commands.choices(sub_section=client.docs_choices['Modes'])
     @app_commands.describe(sub_section="Modes Documentation Subsection to generate embedding for.",user="Username who should be mentioned in the response with embed.")
     async def docs_modes(interaction:discord.Interaction,
                          sub_section:app_commands.Choice[str],
                          user:str=None,
                          ):
-        doc_embed = doc_embeds['Modes'][sub_section.name]
+        doc_embed = client.docs_embeds['Modes'][sub_section.name]
         mention = user if user is not None else ''
         await interaction.response.send_message(content=mention, embed=doc_embed)
 
     @client.GLOBAL_docs_models
-    @app_commands.choices(sub_section=doc_choices['Models'])
+    @app_commands.choices(sub_section=client.docs_choices['Models'])
     @app_commands.describe(sub_section="Models Documentation Subsection to generate embedding for.",user="Username who should be mentioned in the response with embed.",)
     async def docs_models(interaction:discord.Interaction, sub_section:app_commands.Choice[str],user:str=None):
-        doc_embed:discord.Embed = doc_embeds['Models'][sub_section.name]
+        doc_embed:discord.Embed = client.docs_embeds['Models'][sub_section.name]
         mention = user if user is not None else ''
         await interaction.response.send_message(content=mention, embed=doc_embed)
     
     @client.GLOBAL_docs_datasets
-    @app_commands.choices(sub_section=doc_choices['Datasets'])
+    @app_commands.choices(sub_section=client.docs_choices['Datasets'])
     @app_commands.describe(sub_section="Datasets Documentation Subsection to generate embedding for.",user="Username who should be mentioned in the response with embed.",)
     async def docs_datasets(interaction:discord.Interaction, sub_section:app_commands.Choice[str],user:str=None):
-        doc_embed:discord.Embed = doc_embeds['Datasets'][sub_section.name]
+        doc_embed:discord.Embed = client.docs_embeds['Datasets'][sub_section.name]
         mention = user if user is not None else ''
         await interaction.response.send_message(content=mention, embed=doc_embed)
 
     @client.GLOBAL_docs_guides
-    @app_commands.choices(sub_section=doc_choices['Guides'])
+    @app_commands.choices(sub_section=client.docs_choices['Guides'])
     @app_commands.describe(sub_section="Guides Documentation Subsection to generate embedding for.",user="Username who should be mentioned in the response with embed.",)
     async def docs_guides(interaction:discord.Interaction, sub_section:app_commands.Choice[str],user:str=None):
-       doc_embed:discord.Embed = doc_embeds['Guides'][sub_section.name]
+       doc_embed:discord.Embed = client.docs_embeds['Guides'][sub_section.name]
        mention = user if user is not None else ''
        await interaction.response.send_message(content=mention, embed=doc_embed)
     
     @client.GLOBAL_docs_integrations
-    @app_commands.choices(sub_section=doc_choices['Integrations'])
+    @app_commands.choices(sub_section=client.docs_choices['Integrations'])
     @app_commands.describe(sub_section="Integrations Documentation Subsection to generate embedding for.",user="Username who should be mentioned in the response with embed.",)
     async def docs_integrations(interaction:discord.Interaction, sub_section:app_commands.Choice[str],user:str=None):
-        doc_embed:discord.Embed = doc_embeds['Integrations'][sub_section.name]
+        doc_embed:discord.Embed = client.docs_embeds['Integrations'][sub_section.name]
+        mention = user if user is not None else ''
+        await interaction.response.send_message(content=mention, embed=doc_embed)
+
+    @client.GLOBAL_docs_hub
+    @app_commands.choices(sub_section=list(client.docs_choices['HUB']))
+    @app_commands.describe(sub_section="Task Documentation Subsection to generate embedding for.",user="Username who should be mentioned in the response with embed.")
+    async def docs_tasks(interaction:discord.Interaction, sub_section:app_commands.Choice[str],user:str=None):
+        doc_embed = client.docs_embeds['HUB'][sub_section.name]
         mention = user if user is not None else ''
         await interaction.response.send_message(content=mention, embed=doc_embed)
 

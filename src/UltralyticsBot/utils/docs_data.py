@@ -9,6 +9,7 @@ import re
 import string
 import subprocess
 from pathlib import Path
+# from typing import Any, Coroutine
 
 import yaml
 import discord
@@ -18,6 +19,8 @@ from UltralyticsBot import BOT_ID, REPO_DIR
 from UltralyticsBot.utils.logging import Loggr
 
 MD_LINK_RGX = r"\#+\W\[\w+\]\((h|H)ttp(s)?://.*\)" # For headers specifically
+YOLOvN_RGX = r'(yolo)(v)?\d?' # include re.IGNORECASE
+YOLO_RGX = r'(yolo)'
 
 DOCS_URL = "https://docs.ultralytics.com/"
 GH_REPO = "https://github.com/ultralytics/ultralytics.git"
@@ -28,6 +31,7 @@ DOCS_DIR = "docs"
 DOCS_IDX = "mkdocs" # mkdocs.yml
 YAML_EXT = ['.yaml', '.yml']
 LOCAL_DOCS = REPO_DIR if any(REPO_DIR) else "repo_data" # Directory name for local documentation files
+BRAND = {'hub':'HUB', 'yolo':'YOLO', 'ultralytics':'Ultralytics'}
 
 LOGO_ICON = "https://raw.githubusercontent.com/ultralytics/assets/main/logo/Ultralytics-logomark-color.png"
 INTGR8_BANNER = "https://raw.githubusercontent.com/ultralytics/assets/main/yolov8/banner-integrations.png"
@@ -35,7 +39,15 @@ BGRD_LOGO = "https://raw.githubusercontent.com/ultralytics/assets/main/im/banner
 FULL_LOGO = "https://raw.githubusercontent.com/ultralytics/assets/main/logo/Ultralytics-logotype-color.png"
 YOLO_LOGO = "https://raw.githubusercontent.com/ultralytics/assets/main/logo/discord/emote-Ultralytics_YOLO_Logomark.png"
 
-CATEGORIES = ['Modes', 'Tasks', 'Models', 'Datasets', 'Guides', 'Integrations']
+CATEGORIES = ['Modes', 'Tasks', 'Models', 'Datasets', 'Guides', 'HUB', 'Integrations']
+
+def brand_format(text:str):
+    """Ensures correct text formatting of Ultralytics Branding."""
+    txt_parts = [i.span() for i in [re.search(rf'({k})', text, re.IGNORECASE) for k in BRAND] if i is not None]
+    txt_out = text
+    for w in txt_parts:
+        txt_out = txt_out.replace(text[w[0]:w[1]], BRAND[text[w[0]:w[1]].lower()])
+    return txt_out
 
 def md_index_2link(mdtxt:str, base_link:str=DOCS_URL):
     """Constructs links from markdown header sections and base URL string."""
@@ -81,18 +93,19 @@ def fetch_gh_docs(repo:str=GH_REPO, local_docs:str=LOCAL_DOCS) -> tuple[Path, su
     save_path.mkdir() if not save_path.exists() else None
     repo_name = repo.strip('.git').split("/")[-1]
     if (save_path / repo_name).exists():
-        cmd = ['git', 'merge']
+        cmd = ['git', 'pull']
+        save_path = save_path / repo_name
     else:
         cmd = ['git', 'clone', repo]
     # proc_run = subprocess.run(cmd, cwd=save_path, capture_output=True, text=True) # "Cloning into 'ultralytics'...\n", from `.stderr`, not certain how to capture more; `returncode == 0` should be successful
-    proc_run = subprocess.call(cmd, cwd=save_path, text=True) # blocking
-    save_path = save_path / repo_name # update for output
+    proc_run = subprocess.call(cmd, cwd=save_path.as_posix(), text=True) # blocking
+    save_path = save_path / repo_name if save_path.name != repo_name else save_path # update for output
     return save_path, proc_run
 
 def yaml_2_embeds(file:str|Path) -> tuple[dict,dict]:
     """Reads YAML file and generates `discord.Embeds` and `discord.app_choices.Choice` objects. Output order is `choices, embeds` both as dictionaries. If YAML file doesn't have correct name, will raise a generic `Exception`."""
     file = Path(file)
-    category = file.stem.capitalize() if file.stem.capitalize() in CATEGORIES else None
+    category = brand_format(file.stem.capitalize()) if brand_format(file.stem.capitalize()) in CATEGORIES else None
 
     if category:
         data = yaml.safe_load(file.read_text('utf-8'))
@@ -109,6 +122,16 @@ def yaml_2_embeds(file:str|Path) -> tuple[dict,dict]:
     
     elif category is None:
         raise Exception(f"No Docs category named matching {file.as_posix()}")
+
+def load_docs_cache(docs_path:Path=(Path.home() / LOCAL_DOCS)):
+    """Loads data from the path where local repo is cloned and assumes YAML cache has been created."""
+    choices, embeds = {c:{} for c in CATEGORIES}, {c:{} for c in CATEGORIES}
+    for yfile in docs_path.glob("*.yaml"):
+        o_c, o_e = yaml_2_embeds(yfile)
+        _ = choices.update(o_c)
+        _ = embeds.update(o_e)
+        
+    return choices, embeds
 
 def docs_choices(to_file:bool=False) -> tuple[dict, dict]|None:
     """Fetches data from repo and crawls the Docs files for generating links to pages+sections of the Docs as Discord Embeds. First dictionary are the `discord.app_command.Choices` and the second include the `discord.Embed` objects."""
@@ -144,10 +167,10 @@ def docs_choices(to_file:bool=False) -> tuple[dict, dict]|None:
                 base_URL = DOCS_URL + k.lower() + SUB_CAT.lower()
                 
                 # if entry not in options:
-                if SUB_CAT.strip(string.punctuation).capitalize() not in options[k]:
+                if brand_format(SUB_CAT.strip(string.punctuation).capitalize()) not in options[k]:
                     # Get subsections
                     TITLE, *TOC = get_md_headers(f.read_text('utf-8').splitlines())
-                    TITLE = TITLE.strip('# ').title()
+                    TITLE = brand_format(TITLE.strip('# '))
                     
                     embed = discord.Embed(title=TITLE,
                                         colour=15665350, # pink-ish, looked okay
@@ -162,7 +185,7 @@ def docs_choices(to_file:bool=False) -> tuple[dict, dict]|None:
                         _ = embed.add_field(name=section_name, value=f"[Go to section]({section_link})", inline=False) # NOTE inline fields get smooshed and look bad, don't use
                         _ = embed.set_footer(text=f"{LICENSE} or Ultralytics Enterprise Licensing {ULTRA_LICENSING}\n", icon_url=YOLO_LOGO)
                     
-                    _ = options[k].update({SUB_CAT.strip(string.punctuation).capitalize():embed})
+                    _ = options[k].update({brand_format(SUB_CAT.strip(string.punctuation).capitalize()):embed})
     
     # Output to file
     ## NOTE app_command.choices dictionary is made when loading YAML file with yaml_2_embeds()
