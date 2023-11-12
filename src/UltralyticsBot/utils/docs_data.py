@@ -28,6 +28,7 @@ ULTRA_LICENSING = "https://www.ultralytics.com/license"
 LICENSE = "AGPL-3.0"
 
 DOCS_DIR = "docs"
+DOCS_LOC = "en" # english locale
 DOCS_IDX = "mkdocs" # mkdocs.yml
 YAML_EXT = ['.yaml', '.yml']
 LOCAL_DOCS = REPO_DIR if any(REPO_DIR) else "repo_data" # Directory name for local documentation files
@@ -39,7 +40,7 @@ BGRD_LOGO = "https://raw.githubusercontent.com/ultralytics/assets/main/im/banner
 FULL_LOGO = "https://raw.githubusercontent.com/ultralytics/assets/main/logo/Ultralytics-logotype-color.png"
 YOLO_LOGO = "https://raw.githubusercontent.com/ultralytics/assets/main/logo/discord/emote-Ultralytics_YOLO_Logomark.png"
 
-CATEGORIES = ['Modes', 'Tasks', 'Models', 'Datasets', 'Guides', 'HUB', 'Integrations']
+CATEGORIES = ['Modes', 'Tasks', 'Models', 'Datasets', 'Guides', 'YOLOv5', 'HUB', 'Integrations']
 
 def brand_format(text:str):
     """Ensures correct text formatting of Ultralytics Branding."""
@@ -141,7 +142,7 @@ def docs_choices(to_file:bool=False) -> tuple[dict, dict]|None:
     # REFERENCE https://docs.python.org/3.9/library/subprocess.html#subprocess.CalledProcessError
 
     # Read MKDOCS index
-    docs_idx = [f for f in [(into_path / DOCS_IDX).with_suffix(y) for y in YAML_EXT] if f.exists()]
+    docs_idx = [f for f in [(into_path / DOCS_DIR / DOCS_IDX).with_suffix(y) for y in YAML_EXT] if f.exists()]
     Loggr.info(f"Searching for documentation index file in {into_path.as_posix()}")
     assert any(docs_idx), f"Unable to locate mkdocs index file in {into_path.as_posix()} repo directory."
     
@@ -158,7 +159,7 @@ def docs_choices(to_file:bool=False) -> tuple[dict, dict]|None:
     for k,v in docs.items():
         
         if k in CATEGORIES:
-            category_path = (into_path / DOCS_DIR / k.lower())
+            category_path = (into_path / DOCS_DIR / DOCS_LOC / k.lower())
             files = get_subcat_files(category_path) if k.lower() != 'datasets' else get_dataset_files(category_path)
             
             for f in files:
