@@ -38,7 +38,7 @@ def main():
         bot_mention = any([b.id == BOT_ID for b in mentions])
         args = get_args(content)
 
-        # DEV Command
+        #-----DEV Commands-----#
         ## TODO use actions.DEVMsgs to replace message logic here.
         if is_owner and content.startswith("$newstatus"): 
             status, msg = chng_status(message)
@@ -75,7 +75,7 @@ def main():
             await client.tree.add_command(command=args[0].lower(), guild=guild)
             await message.reply(f"Removed the {args} command from server {guild.name}")
         
-        # GLOBAL Command
+        #-----GLOBAL Commands-----#
         elif content.startswith("$predict") or bot_mention:
             await msg_predict(message)
 
@@ -85,7 +85,7 @@ def main():
             res = sub_sect if section and sub_sect else None
             await message.reply(embed=res) if isinstance(res, discord.Embed) else await message.reply("Couldn't find that!")
     
-    # Slash-Commands
+    #-----Slash-Commands-----#
     client.GLOBAL_predict(im_predict)
 
     client.GLOBAL_about(about)
@@ -103,17 +103,25 @@ def main():
     # async def getcommands(inter:discord.Interaction):
     #     await inter.response.send_message('\n'.join([c.name for c in client.tree.get_commands(guild=inter.guild)]))
     
+    #-----DOCS Commands-----#
+
     @client.GLOBAL_docs_tasks
     @app_commands.choices(sub_section=list(client.docs_choices['Tasks']))
-    @app_commands.describe(sub_section="Task Documentation Subsection to generate embedding for.",user="Username who should be mentioned in the response with embed.")
-    async def docs_tasks(interaction:discord.Interaction, sub_section:app_commands.Choice[str],user:str=None):
+    @app_commands.describe(
+        sub_section="Task Documentation Subsection to generate embedding for.",
+        user="Username who should be mentioned in the response with embed.")
+    async def docs_tasks(interaction:discord.Interaction,
+                         sub_section:app_commands.Choice[str],
+                         user:str=None):
         doc_embed = client.docs_embeds['Tasks'][sub_section.name]
         mention = user if user is not None else ''
         await interaction.response.send_message(content=mention, embed=doc_embed)
  
     @client.GLOBAL_docs_modes
     @app_commands.choices(sub_section=client.docs_choices['Modes'])
-    @app_commands.describe(sub_section="Modes Documentation Subsection to generate embedding for.",user="Username who should be mentioned in the response with embed.")
+    @app_commands.describe(
+        sub_section="Modes Documentation Subsection to generate embedding for.",
+        user="Username who should be mentioned in the response with embed.")
     async def docs_modes(interaction:discord.Interaction,
                          sub_section:app_commands.Choice[str],
                          user:str=None,
@@ -124,43 +132,77 @@ def main():
 
     @client.GLOBAL_docs_models
     @app_commands.choices(sub_section=client.docs_choices['Models'])
-    @app_commands.describe(sub_section="Models Documentation Subsection to generate embedding for.",user="Username who should be mentioned in the response with embed.",)
-    async def docs_models(interaction:discord.Interaction, sub_section:app_commands.Choice[str],user:str=None):
+    @app_commands.describe(
+        sub_section="Models Documentation Subsection to generate embedding for.",
+        user="Username who should be mentioned in the response with embed.",)
+    async def docs_models(interaction:discord.Interaction,
+                          sub_section:app_commands.Choice[str],
+                          user:str=None):
         doc_embed:discord.Embed = client.docs_embeds['Models'][sub_section.name]
         mention = user if user is not None else ''
         await interaction.response.send_message(content=mention, embed=doc_embed)
     
     @client.GLOBAL_docs_datasets
     @app_commands.choices(sub_section=client.docs_choices['Datasets'])
-    @app_commands.describe(sub_section="Datasets Documentation Subsection to generate embedding for.",user="Username who should be mentioned in the response with embed.",)
-    async def docs_datasets(interaction:discord.Interaction, sub_section:app_commands.Choice[str],user:str=None):
+    @app_commands.describe(
+        sub_section="Datasets Documentation Subsection to generate embedding for.",
+        user="Username who should be mentioned in the response with embed.",)
+    async def docs_datasets(interaction:discord.Interaction,
+                            sub_section:app_commands.Choice[str],
+                            user:str=None):
         doc_embed:discord.Embed = client.docs_embeds['Datasets'][sub_section.name]
         mention = user if user is not None else ''
         await interaction.response.send_message(content=mention, embed=doc_embed)
 
     @client.GLOBAL_docs_guides
     @app_commands.choices(sub_section=client.docs_choices['Guides'])
-    @app_commands.describe(sub_section="Guides Documentation Subsection to generate embedding for.",user="Username who should be mentioned in the response with embed.",)
-    async def docs_guides(interaction:discord.Interaction, sub_section:app_commands.Choice[str],user:str=None):
+    @app_commands.describe(
+        sub_section="Guides Documentation Subsection to generate embedding for.",
+        user="Username who should be mentioned in the response with embed.",)
+    async def docs_guides(interaction:discord.Interaction,
+                          sub_section:app_commands.Choice[str],
+                          user:str=None):
        doc_embed:discord.Embed = client.docs_embeds['Guides'][sub_section.name]
        mention = user if user is not None else ''
        await interaction.response.send_message(content=mention, embed=doc_embed)
     
     @client.GLOBAL_docs_integrations
     @app_commands.choices(sub_section=client.docs_choices['Integrations'])
-    @app_commands.describe(sub_section="Integrations Documentation Subsection to generate embedding for.",user="Username who should be mentioned in the response with embed.",)
-    async def docs_integrations(interaction:discord.Interaction, sub_section:app_commands.Choice[str],user:str=None):
+    @app_commands.describe(
+        sub_section="Integrations Documentation Subsection to generate embedding for.",
+        user="Username who should be mentioned in the response with embed.",)
+    async def docs_integrations(interaction:discord.Interaction,
+                                sub_section:app_commands.Choice[str],
+                                user:str=None):
         doc_embed:discord.Embed = client.docs_embeds['Integrations'][sub_section.name]
         mention = user if user is not None else ''
         await interaction.response.send_message(content=mention, embed=doc_embed)
 
     @client.GLOBAL_docs_hub
     @app_commands.choices(sub_section=list(client.docs_choices['HUB']))
-    @app_commands.describe(sub_section="Task Documentation Subsection to generate embedding for.",user="Username who should be mentioned in the response with embed.")
-    async def docs_tasks(interaction:discord.Interaction, sub_section:app_commands.Choice[str],user:str=None):
+    @app_commands.describe(
+        sub_section="Ultralytics HUB Documentation Subsection to generate embedding for.",
+        user="Username who should be mentioned in the response with embed.")
+    async def docs_hub(interaction:discord.Interaction,
+                         sub_section:app_commands.Choice[str],
+                         user:str=None):
         doc_embed = client.docs_embeds['HUB'][sub_section.name]
         mention = user if user is not None else ''
         await interaction.response.send_message(content=mention, embed=doc_embed)
+
+    @client.GLOBAL_docs_yolov5
+    @app_commands.choices(sub_section=list(client.docs_choices['YOLOv5']))
+    @app_commands.describe(
+        sub_section="YOLOv5 Documentation Subsection to generate embedding for.",
+        user="Username who should be mentioned in the response with embed.")
+    async def docs_yolov5(interaction:discord.Interaction,
+                         sub_section:app_commands.Choice[str],
+                         user:str=None):
+        doc_embed = client.docs_embeds['YOLOv5'][sub_section.name]
+        mention = user if user is not None else ''
+        await interaction.response.send_message(content=mention, embed=doc_embed)
+
+    #-----DEV Commands-----#
 
     @client.DEV_status_change
     @app_commands.choices(
