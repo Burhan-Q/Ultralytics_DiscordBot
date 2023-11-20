@@ -143,19 +143,27 @@ Global:
 
       `/commands` :: That's how you got here.
 
-      `/predict` :: Runs inference on image link provided.
-        ```
-        img_link - [string] link to image data, there is no guarantee that any image link will work.
-        show - [bool] True returns image with annotations.
-        conf - [float] 0.01 <= 1.0 confidence threshold for object classification, higher values lowers the number of detection results.
-        iou - [float] 0.1 <= 0.95 intersection over union threshold, higher number will return multiple detections per object.
-        size - [integer] 32 <= 1280 dimension to use for largest image side, only provide a single value.
-        model - [string] all lower case specification for YOLOv5 or YOLOv8 model, with n, s, m, l, or x designation; example 'yolov5s'.
-        ```
+      `/predict` :: Runs inference on image link provided. Run `/slashexample` for detailed information.
 
       `slashexample` :: A few examples on how to use `/predict` command.
 
       `msgexample` :: A few examples on how to use UltralyticsBot via messages.
+
+      `docs_modes` :: Generate Discord Embed content for Ultralytics Modes Documentation.
+
+      `docs_tasks` :: Generate Discord Embed content for Ultralytics Tasks Documentation.
+
+      `docs_models` :: Generate Discord Embed content for Ultralytics Models Documentation.
+
+      `docs_datasets` :: Generate Discord Embed content for Ultralytics Datasets Documentation.
+
+      `docs_guides` :: Generate Discord Embed content for Ultralytics Guides Documentation.
+
+      `docs_integrations` :: Generate Discord Embed content for Ultralytics Integrations Documentation.
+
+      `docs_hub` :: Generate Discord Embed content for Ultralytics HUB Documentation.
+
+      `docs_yolov5` :: Generate Discord Embed content for Ultralytics YOLOv5 Documentation.
 
     parameters: null
 
@@ -208,10 +216,18 @@ Global:
     content: null
     parameters: null # List of sub-section choices
 
+  docs_yolov5: 
+    name: Docs - YOLOv5
+    slash_cmd: /docs_yolov5
+    description: Reference Ultralytics YOLOv5 archived Documentation.
+    content: null
+    parameters: null # List of sub-section choices
+
   # TEMPLATE: 
   #   name: 
   #   slash_cmd: 
   #   description: 
+  #   content: 
   #   parameters: 
 
 Dev:
