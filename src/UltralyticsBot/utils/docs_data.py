@@ -42,8 +42,9 @@ FULL_LOGO = "https://github.com/Burhan-Q/Ultralytics_DiscordBot/assets/62214284/
 YOLO_LOGO = "https://raw.githubusercontent.com/ultralytics/assets/main/logo/discord/emote-Ultralytics_YOLO_Logomark.png"
 
 CATEGORIES = ['Modes', 'Tasks', 'Models', 'Datasets', 'Guides', 'YOLOv5', 'HUB', 'Integrations']
+ALL_CAPS = ['YOLO', 'CLI', 'JSON', 'YAML', 'HUB', 'API', 'URL', 'OBB', 'TCP', 'RTSP', 'ONNX', 'TF.JS', 'TF', 'NCNN', 'CNN', 'COCO']
 
-def brand_format(text:str):
+def brand_format(text:str) -> str:
     """Ensures correct text formatting of Ultralytics Branding."""
     txt_parts = [i.span() for i in [re.search(rf'({k})', text, re.IGNORECASE) for k in BRAND] if i is not None]
     txt_out = text
@@ -51,12 +52,18 @@ def brand_format(text:str):
         txt_out = txt_out.replace(text[w[0]:w[1]], BRAND[text[w[0]:w[1]].lower()])
     return txt_out
 
-def md_index_2link(mdtxt:str, base_link:str=DOCS_URL):
+def allcapwords(text:str) -> str:
+    """Converts words that should be shown with all caps from title-case to all-caps."""
+    for a in ALL_CAPS:
+        text = text.replace(a.title(), a)
+    return text
+
+def md_index_2link(mdtxt:str, base_link:str=DOCS_URL) -> str:
     """Constructs links from markdown header sections and base URL string."""
     base_link = base_link if base_link.endswith('/') else base_link + '/'
     return base_link + '#' + ''.join([c for c in mdtxt.strip('# ').lower() if c not in string.punctuation]).replace(' ','-')
 
-def delist_dict(in_obj:list, out:dict=None):
+def delist_dict(in_obj:list, out:dict=None) -> dict:
     """Creates nested dictionaries if dictionaries contain list of dictionaries."""
     out = out if out is not None else dict()
     if isinstance(in_obj, list):
@@ -68,20 +75,20 @@ def delist_dict(in_obj:list, out:dict=None):
             out.update({k:delist_dict(v)} if isinstance(v, list) else {k:v})
     return out
 
-def get_subcat_files(cat_path:Path):
+def get_subcat_files(cat_path:Path) -> list[Path]:
     """Fetch sub-category doc-files, these are expected to be found at a depth of one (1)."""
     return [f for f in cat_path.rglob("*.md") if f.stem != 'index']
 
-def get_dataset_files(ds_path:Path):
+def get_dataset_files(ds_path:Path) -> list[Path]:
     """Fetch Dataset doc-files, these are nested inside directories and should be `index.md` files."""
     tasks = [p for p in ds_path.iterdir() if p.is_dir()]
     return [next(task.glob("index.md")) for task in tasks]
 
-def no_header_links(md_header:str):
+def no_header_links(md_header:str) -> str:
     """Removes Markdown Header links and only returns header text."""
     return md_header.split(']')[0].replace('[', '') if re.search(MD_LINK_RGX, md_header) else md_header
 
-def get_md_headers(md_content:list):
+def get_md_headers(md_content:list) -> list[str]:
     """Gets Markdown headers text, ignoring code-block comment lines"""
     headers = {k:v for k,v in enumerate(md_content) if v.startswith('#')}
     codeblcks = [k for k,v in enumerate(md_content) if v.startswith('```')]
@@ -125,7 +132,7 @@ def yaml_2_embeds(file:str|Path) -> tuple[dict,dict]:
     elif category is None:
         raise Exception(f"No Docs category named matching {file.as_posix()}")
 
-def load_docs_cache(docs_path:Path=(Path.home() / LOCAL_DOCS)):
+def load_docs_cache(docs_path:Path=(Path.home() / LOCAL_DOCS)) -> tuple[dict,dict]:
     """Loads data from the path where local repo is cloned and assumes YAML cache has been created."""
     choices, embeds = {c:{} for c in CATEGORIES}, {c:{} for c in CATEGORIES}
     for yfile in docs_path.glob("*.yaml"):
@@ -181,7 +188,7 @@ def docs_choices(to_file:bool=False) -> tuple[dict, dict]|None:
                     _ = embed.set_thumbnail(url=LOGO_ICON)
                     
                     for si,section in enumerate(TOC, 1):
-                        section_name = section.strip('# ').title()
+                        section_name = allcapwords(section.strip('# ').title().replace("’S", "'s"))
                         section_link = md_index_2link(section, base_URL)
                         _ = embed.set_author(name="UltralyticsBot")
                         _ = embed.add_field(name=section_name, value=f"[Go to section]({section_link})", inline=False) # NOTE inline fields get smooshed and look bad, don't use
