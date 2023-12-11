@@ -37,7 +37,8 @@ BRAND = {'hub':'HUB', 'yolo':'YOLO', 'ultralytics':'Ultralytics'}
 LOGO_ICON = "https://raw.githubusercontent.com/ultralytics/assets/main/logo/Ultralytics-logomark-color.png"
 INTGR8_BANNER = "https://raw.githubusercontent.com/ultralytics/assets/main/yolov8/banner-integrations.png"
 BGRD_LOGO = "https://raw.githubusercontent.com/ultralytics/assets/main/im/banner-ultralytics-github.png"
-FULL_LOGO = "https://raw.githubusercontent.com/ultralytics/assets/main/logo/Ultralytics-logotype-color.png"
+# FULL_LOGO = "https://raw.githubusercontent.com/ultralytics/assets/main/logo/Ultralytics-logotype-color.png"
+FULL_LOGO = "https://github.com/Burhan-Q/Ultralytics_DiscordBot/assets/62214284/ec6ef857-72b1-407b-b078-b2c3e8e34df0"
 YOLO_LOGO = "https://raw.githubusercontent.com/ultralytics/assets/main/logo/discord/emote-Ultralytics_YOLO_Logomark.png"
 
 CATEGORIES = ['Modes', 'Tasks', 'Models', 'Datasets', 'Guides', 'YOLOv5', 'HUB', 'Integrations']
