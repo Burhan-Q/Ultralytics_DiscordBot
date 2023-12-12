@@ -184,33 +184,6 @@ async def msgexample(interaction:discord.Interaction):
     msg = CMDS['Global']['msgexample']['content']
     await interaction.response.send_message(content=msg, suppress_embeds=True)
 
-# NOTE keep commented until finished to avoid throwing errors
-# class DocsCommands:
-
-#     doc_choices, doc_embeds = dict(), dict()
-
-#     def __init__(self, *args, **kwargs) -> None:
-#         self.last_update = 0 # when where docs last updated
-#         pass
-
-#     def get_docs_data(self, *args, **kwargs):
-#         # files_age() # NOTE use to check if any docs file is older than 24 hours
-#         ...
-
-#     @staticmethod
-#     @app_commands.choices(sub_section=doc_choices['Tasks'])
-#     @app_commands.describe(
-#         sub_section="Task Documentation Subsection to generate embedding for.",
-#         user="Username who should be mentioned in the response with embed."
-#         )
-#     async def docs_tasks(interaction:discord.Interaction,
-#                          sub_section:app_commands.Choice[str],
-#                          user:str=None):
-#         doc_embed = DocsCommands.doc_embeds['Tasks'][sub_section.name]
-#         mention = user if user is not None else ''
-#         await interaction.response.send_message(content=mention, embed=doc_embed)
-
-
 ###-----DEV COMMANDS-----###
 
 # Change Activity Status
