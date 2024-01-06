@@ -14,7 +14,7 @@ Following the steps below will run the `bot.py` code as a (background) service f
 
 `sudo nano discordbot.service`
 
-- Use your text editor of choice
+- NOTE: Feel free to use your text editor of choice
 
 ### Add below into discordbot.service
 
