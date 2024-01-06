@@ -21,7 +21,7 @@ Use the Issue to provide supporting evidence or citations for the bug or fix.
 
 ## Checklist
 
-> Note
+> [!NOTE] 
 
 <!-- Only PRs where author has completed all outlined items will be reviewed. Marking these as complete without actually completing them will not help your case, please do not attempt this at it will waste time. -->
 
