@@ -21,9 +21,8 @@ Use the Issue to provide supporting evidence or citations for the bug or fix.
 
 ## Checklist
 
-> [!NOTE] 
-
-<!-- Only PRs where author has completed all outlined items will be reviewed. Marking these as complete without actually completing them will not help your case, please do not attempt this at it will waste time. -->
+> [!NOTE]
+> Only PRs where author has completed all outlined items will be reviewed. Marking these as complete without actually completing them will not help your case, please do not attempt this at it will waste time.
 
 - [ ] I have reviewed and agreed to the Repository Contributing Guide
 - [ ] I have verified that this PR includes the latest changes from `main` (the default branch)
