@@ -4,7 +4,7 @@
 
 ## Rationale
 
-<!-- Outline justificaiton for feature to be added and provide references/citations to any relevant evidence, publications, or standards. -->
+<!-- Outline justification for feature to be added and provide references/citations to any relevant evidence, publications, or standards. -->
 
 ## Changes 
 
@@ -21,7 +21,7 @@
 - [ ] I have verified that this PR includes the latest changes from `main` (the default branch)
 - [ ] All new features have been documented in this PR
 - [ ] All repository checks/tests are passing for the final commit
-- [ ] I have throughly tested my code and verify that I'm not aware of any breaking changes this PR introduces
+- [ ] I have thoroughly tested my code and verify that I'm not aware of any breaking changes this PR introduces
 
 ## Known/lingering Problems
 
