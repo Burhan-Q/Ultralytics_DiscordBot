@@ -28,6 +28,7 @@ def main():
     @client.event
     async def on_ready():
         Loggr.info("Client is ready, sync must be run manually.")
+        client.docs_update.start()
         # Loggr.info("Initialized client sync")
         # await client.tree.sync() # NOTE lets to Rate Limiting (especially when testing)
 
@@ -66,6 +67,8 @@ def main():
                     await message.reply(f"Commands synced for all servers {NEWLINE}- {(NEWLINE + '- ').join([c.name for c in syncd_cmds])}")
                 except Exception as e:
                     Loggr.error(f"Syncing exception {e}")
+            
+            Loggr.info(f"Docs update scheduler {'is running' if client.docs_update.is_running() else 'not running.'}")
 
         elif is_owner and content.startswith("$rm_cmd"):
             cmd = await client.tree.remove_command(command=args[0].lower(), guild=guild)
