@@ -142,16 +142,21 @@ async def im_predict(interaction:discord.Interaction,
                 infer_im, infer_data, infer_ratio = image.inference_img(int(size))
                 req = inference_req(infer_data, req2=REQ_ENDPOINT, confidence=str(conf), iou=str(iou), size=str(size), model=str(model))
                 req.raise_for_status()
-                Reply = ResponseMsg(req, show, True, infer_ratio)
-                file, text = Reply.start_msg(partial(process_result, img=infer_im, plot=show, class_pad=Reply.cls_pad), infer_ratio=infer_ratio)
-                file = attach_file(file) if show else None
+                if req.status_code != 200: # Catch all other non-good return codes and make sure to reply
+                    Loggr.debug(f"{API_ERR_MSG.format(req.status_code, req.reason)}")
+                    await interaction.followup.send(API_ERR_MSG.format(req.status_code, req.reason))
+                
+                else:
+                    Reply = ResponseMsg(req, show, True, infer_ratio)
+                    file, text = Reply.start_msg(partial(process_result, img=infer_im, plot=show, class_pad=Reply.cls_pad), infer_ratio=infer_ratio)
+                    file = attach_file(file) if show else None
         
-            except requests.HTTPError:
-                Loggr.error(f"Error during request: {e} with response {req.status_code} - {req.reason}")
+            except requests.HTTPError as e:
+                Loggr.debug(f"Error during request: {e} with response {req.status_code} - {req.reason}")
                 await interaction.followup.send(API_ERR_MSG.format(req.status_code, req.reason))
 
             except Exception as e:
-                Loggr.error(f"Error during request: {e} with response {req.status_code} - {req.reason}")
+                Loggr.debug(f"Error during request: {e} with response {req.status_code} - {req.reason}")
                 await interaction.followup.send(API_ERR_MSG.format(e, ' '.join(['and', req.status_code, req.reason])))
         
         else:
