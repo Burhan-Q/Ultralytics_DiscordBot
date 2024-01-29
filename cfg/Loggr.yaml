@@ -14,6 +14,7 @@ handlers:
     class : logging.handlers.RotatingFileHandler
     formatter: precise
     filename: bot.log
+    encoding: utf-8
     maxBytes: 20480
     backupCount: 5
 loggers:
