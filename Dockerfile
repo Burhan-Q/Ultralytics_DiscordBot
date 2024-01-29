@@ -30,3 +30,7 @@ CMD ["python3", "src/bot.py"]
 
 # VIEW CONTAINER FILES (not recommended)
 # sudo docker exec -it ultrabot bash
+
+# TEST BUILD
+# sudo docker build -t ubot2 . --build-arg REPO_DIR=repo_data
+# sudo docker run -d --name ubot2 ubot2:latest
