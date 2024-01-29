@@ -13,6 +13,7 @@ from pathlib import Path
 
 import yaml
 import discord
+import requests
 from discord import app_commands
 
 from UltralyticsBot import BOT_ID, REPO_DIR
@@ -41,7 +42,7 @@ BGRD_LOGO = "https://raw.githubusercontent.com/ultralytics/assets/main/im/banner
 FULL_LOGO = "https://github.com/Burhan-Q/Ultralytics_DiscordBot/assets/62214284/ec6ef857-72b1-407b-b078-b2c3e8e34df0"
 YOLO_LOGO = "https://raw.githubusercontent.com/ultralytics/assets/main/logo/discord/emote-Ultralytics_YOLO_Logomark.png"
 
-CATEGORIES = ['Modes', 'Tasks', 'Models', 'Datasets', 'Guides', 'YOLOv5', 'HUB', 'Integrations']
+CATEGORIES = ['Modes', 'Tasks', 'Models', 'Datasets', 'Guides', 'YOLOv5', 'HUB', 'Integrations', 'Help'] # 'NEW 🚀 Explorer'
 ALL_CAPS = ['YOLO', 'CLI', 'JSON', 'YAML', 'HUB', 'API', 'URL', 'OBB', 'TCP', 'RTSP', 'ONNX', 'TF.JS', 'TF', 'NCNN', 'CNN', 'COCO']
 
 def brand_format(text:str) -> str:
@@ -87,6 +88,27 @@ def get_dataset_files(ds_path:Path) -> list[Path]:
 def no_header_links(md_header:str) -> str:
     """Removes Markdown Header links and only returns header text."""
     return md_header.split(']')[0].replace('[', '') if re.search(MD_LINK_RGX, md_header) else md_header
+
+# def fetch_robots(url:str="https://docs.ultralytics.com/", loc:str="robots.txt"):
+    
+#     req = requests.get(url=(url + loc))
+#     if req.ok and req.status_code == 200:
+#         data = req.content.decode("utf-8")
+#     else:
+#         raise requests.RequestException(f"Whoa! problem with fetching {url + loc}")
+#     robot_d = dict()
+#     lines = [l.split(": ") for l in data.splitlines()]
+#     lines = [v for l in data.splitlines() for v in l]
+#     for l in lines:
+#         k,v = l.split(": ")
+#         if k not in robot_d:
+#             robot_d.update({k:v})
+#         elif k in robot_d:
+#             existing = robot_d.get(k)
+#             robot_d[k] = [*existing, v] if isinstance(existing, list) else [existing, v]
+#     smap = (robot_d.get("Sitemap") or robot_d.get("sitemap"))
+#     smap = [sm for sm in smap if sm == (url + 'sitemap.xml')] if isinstance(smap, list) and len(smap) > 1 else smap
+#     ... # TODO finish
 
 def get_md_headers(md_content:list) -> list[str]:
     """Gets Markdown headers text, ignoring code-block comment lines"""
@@ -201,7 +223,7 @@ def docs_choices(to_file:bool=False) -> tuple[dict, dict]|None:
     if to_file:
         for k,v in options.items():
             embeds_file = into_path.parent / f'{k}.yaml'
-            _ = embeds_file.write_text(yaml.safe_dump({kk:vv.to_dict() for kk,vv in v.items()}),encoding='utf-8')
+            _ = embeds_file.write_text(yaml.safe_dump({kk:vv.to_dict() for kk,vv in v.items()}, allow_unicode=True),encoding='utf-8')
     
     # Generate dictionary for use with app_commands.choices
     else:
