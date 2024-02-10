@@ -41,7 +41,7 @@ REPO_DIR = DOCKER_CFG['services']['bot']['build']['args']['REPO_DIR'].strip().lo
 ASSETS = PROJ_ROOT / 'assets'
 
 # Models Regex
-yolov5 = r"^yolov5(n|s|m|l|x)(u|6u)$"
-yolov8 = r"^yolov8(n|s|m|l|x)(-cls|-seg|-pose|-obb)?$"
+YOLOv5_REGEX = r"^yolov5(n|s|m|l|x)(u|6u)$"
+YOLOv8_REGEX = r"^yolov8(n|s|m|l|x)(-cls|-seg|-pose|-obb)?$"
 
 __all__ = 'ROOT', 'PROJ_ROOT', 'SECRETS', 'CMDS', 'REQ_CFG', 'ASSETS', 'BOT_TOKEN', 'BOT_ID', 'HUB_KEY', 'DEFAULT_INFER', 'REQ_ENDPOINT', 'REQ_LIM', 'RESPONSE_KEYS', 'GH'
