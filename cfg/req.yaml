@@ -5,7 +5,7 @@ default: # default inference request
   model: "yolov8n"
   key: null
   image: null
-endpoint: "https://api.ultralytics.com/detect" # Inference API endpoint
+# endpoint: "https://api.ultralytics.com/detect" # Inference API endpoint
 # endpoint: "https://api.ultralytics.com/v1/predict" # NOTE new enpoint after hub-sdk launch
 response: # response keys
   - name
