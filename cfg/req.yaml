@@ -26,3 +26,39 @@ limits: # Inference API request value limits
     min: 32
     max: 1280
 max_req: 2097152 # 2 * (1024 ** 2) ~ 2.0 MB
+models:
+  - YOLOv5n
+  - YOLOv5s
+  - YOLOv5m
+  - YOLOv5l
+  - YOLOv5x
+
+  - YOLOv8n
+  - YOLOv8s
+  - YOLOv8m
+  - YOLOv8l
+  - YOLOv8x
+
+  - YOLOv8n-cls
+  - YOLOv8s-cls
+  - YOLOv8m-cls
+  - YOLOv8l-cls
+  - YOLOv8x-cls
+
+  - YOLOv8n-seg
+  - YOLOv8s-seg
+  - YOLOv8m-seg
+  - YOLOv8l-seg
+  - YOLOv8x-seg
+
+  - YOLOv8n-pose
+  - YOLOv8s-pose
+  - YOLOv8m-pose
+  - YOLOv8l-pose
+  - YOLOv8x-pose
+  
+  - YOLOv8n-obb
+  - YOLOv8s-obb
+  - YOLOv8m-obb
+  - YOLOv8l-obb
+  - YOLOv8x-obb
