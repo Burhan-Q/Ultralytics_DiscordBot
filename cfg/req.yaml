@@ -39,26 +39,26 @@ models:
   - YOLOv8l
   - YOLOv8x
 
-  - YOLOv8n-cls
-  - YOLOv8s-cls
-  - YOLOv8m-cls
-  - YOLOv8l-cls
-  - YOLOv8x-cls
+  # - YOLOv8n-cls
+  # - YOLOv8s-cls
+  # - YOLOv8m-cls
+  # - YOLOv8l-cls
+  # - YOLOv8x-cls
 
-  - YOLOv8n-seg
-  - YOLOv8s-seg
-  - YOLOv8m-seg
-  - YOLOv8l-seg
-  - YOLOv8x-seg
+  # - YOLOv8n-seg
+  # - YOLOv8s-seg
+  # - YOLOv8m-seg
+  # - YOLOv8l-seg
+  # - YOLOv8x-seg
 
-  - YOLOv8n-pose
-  - YOLOv8s-pose
-  - YOLOv8m-pose
-  - YOLOv8l-pose
-  - YOLOv8x-pose
-  
-  - YOLOv8n-obb
-  - YOLOv8s-obb
-  - YOLOv8m-obb
-  - YOLOv8l-obb
-  - YOLOv8x-obb
+  # - YOLOv8n-pose
+  # - YOLOv8s-pose
+  # - YOLOv8m-pose
+  # - YOLOv8l-pose
+  # - YOLOv8x-pose
+
+  # - YOLOv8n-obb
+  # - YOLOv8s-obb
+  # - YOLOv8m-obb
+  # - YOLOv8l-obb
+  # - YOLOv8x-obb
