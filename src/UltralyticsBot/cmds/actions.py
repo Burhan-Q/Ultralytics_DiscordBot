@@ -24,7 +24,7 @@ from UltralyticsBot.cmds.client import MyClient
 
 TEMPFILE = 'detect_res.png' # fallback
 LIMITS = {k:app_commands.Range[type(v['min']), v['min'], v['max']] for k,v in REQ_LIM.items()}
-ACTIVITIES = {ki:k for ki,k in enumerate(['Reset', 'Playing', 'Streaming', 'Lisenting', 'Watching', 'Custom', 'Competing'],-1)}
+ACTIVITIES = {ki:k for ki,k in enumerate(['Reset', 'Playing', 'Streaming', 'Listening', 'Watching', 'Custom', 'Competing'],-1)}
 iACTIVITIES = {k:ki for ki,k in enumerate(['unknown','game','stream','listen','watch','custom','competing'],-1)}
 
 ###-----SUPPORT FUNCTIONS-----###
