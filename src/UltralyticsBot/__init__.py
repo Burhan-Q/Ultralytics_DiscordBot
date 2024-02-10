@@ -33,6 +33,7 @@ REQ_ENDPOINT = REQ_CFG.get('endpoint') or SECRETS.get('endpoint')
 REQ_LIM = REQ_CFG['limits']
 RESPONSE_KEYS = tuple(REQ_CFG['response'])
 MAX_REQ = REQ_CFG['max_req']
+MODELS = REQ_CFG['models']
 
 # Docker config
 DOCKER_CFG = yaml.safe_load((PROJ_ROOT / 'compose.yaml').read_text('utf-8'))
@@ -44,4 +45,4 @@ ASSETS = PROJ_ROOT / 'assets'
 YOLOv5_REGEX = r"^yolov5(n|s|m|l|x)(u|6u)$"
 YOLOv8_REGEX = r"^yolov8(n|s|m|l|x)(-cls|-seg|-pose|-obb)?$"
 
-__all__ = 'ROOT', 'PROJ_ROOT', 'SECRETS', 'CMDS', 'REQ_CFG', 'ASSETS', 'BOT_TOKEN', 'BOT_ID', 'HUB_KEY', 'DEFAULT_INFER', 'REQ_ENDPOINT', 'REQ_LIM', 'RESPONSE_KEYS', 'GH'
+__all__ = 'ROOT', 'PROJ_ROOT', 'SECRETS', 'CMDS', 'REQ_CFG', 'ASSETS', 'BOT_TOKEN', 'BOT_ID', 'HUB_KEY', 'DEFAULT_INFER', 'REQ_ENDPOINT', 'REQ_LIM', 'RESPONSE_KEYS', 'GH', 'YOLOv5_REGEX', 'YOLOv8_REGEX', 'MODELS'
