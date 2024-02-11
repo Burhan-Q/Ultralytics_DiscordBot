@@ -14,13 +14,13 @@ import requests
 import numpy as np
 from discord import app_commands
 
-from UltralyticsBot import REQ_LIM, REQ_ENDPOINT, CMDS, RESPONSE_KEYS, HUB_KEY, DEFAULT_INFER, BOT_ID, OWNER_ID, GH, MAX_REQ
-from UltralyticsBot.utils.checks import model_chk
+from UltralyticsBot import REQ_LIM, REQ_ENDPOINT, CMDS, RESPONSE_KEYS, HUB_KEY, DEFAULT_INFER, BOT_ID, OWNER_ID, GH, MODELS
 from UltralyticsBot.utils.logging import Loggr
+from UltralyticsBot.cmds.client import MyClient
+from UltralyticsBot.utils.checks import model_chk
 from UltralyticsBot.utils.general import ReqImage, attach_file, files_age
 from UltralyticsBot.utils.plotting import nxy2xy, xcycwh2xyxy, rel_line_size, draw_all_boxes
 from UltralyticsBot.utils.msgs import IMG_ERR_MSG, API_ERR_MSG, NOT_OWNER, gen_line, ReqMessage, ResponseMsg, NEWLINE
-from UltralyticsBot.cmds.client import MyClient
 
 TEMPFILE = 'detect_res.png' # fallback
 LIMITS = {k:app_commands.Range[type(v['min']), v['min'], v['max']] for k,v in REQ_LIM.items()}
@@ -39,9 +39,12 @@ def inference_req(imgbytes:bytes, req2:str=REQ_ENDPOINT, **kwargs) -> requests.R
     if any(kwargs):
         for k in kwargs:
             _ = req_dict.update({k:kwargs[k]}) if k in req_dict else None
-    req_dict['key'] = HUB_KEY
-    req_dict['image'] = base64.b64encode(imgbytes).decode()
-    return requests.post(req2, json=req_dict)
+    # req_dict['key'] = HUB_KEY
+    # req_dict['image'] = base64.b64encode(imgbytes).decode()
+    # req_dict['image'] = base64.b64encode(imgbytes).decode()
+    _ = [req_dict.pop(i) for i in ["image", "key"]]
+    # return requests.post(req2, json=req_dict)
+    return requests.post(req2, headers={}, data=req_dict, files={"image":imgbytes})
     # return req_dict # NOTE might need to change in future
 
 def process_result(img:np.ndarray, predictions:list, plot:bool, class_pad:int) -> tuple[np.ndarray, str]:
@@ -52,10 +55,26 @@ def process_result(img:np.ndarray, predictions:list, plot:bool, class_pad:int) -
     
     msg = ''
     pred_boxes = np.zeros((1,5)) # x-center, y-center, width, height, class
+    # TODO add post processing based on model used Segment, Key-point, Pose, OBB
     for p in predictions:
         cls_name, conf, idx, *(x, y, w, h) = get_values(p)
-        x1, y1, x2, y2 = tuple(nxy2xy(xcycwh2xyxy(np.array((x, y, w, h))), imH, imW)) # n-xcycwh -> x1y1x2y2
-        pred_boxes = np.vstack([pred_boxes, np.array((x1, y1, x2, y2, idx))])
+        x1, y1, x2, y2 = tuple(
+            nxy2xy(
+                xcycwh2xyxy(
+                    np.array((x, y, w, h))
+                    ),
+                    imH,
+                    imW
+                )
+            ) # n-xcycwh -> x1y1x2y2
+        pred_boxes = np.vstack(
+            [
+                pred_boxes,
+                np.array(
+                    (x1, y1, x2, y2, idx)
+                    )
+            ]
+            )
         msg += gen_line(cls_name, class_pad, conf, x1, y1, x2, y2)
     
     if plot:
@@ -114,25 +133,28 @@ async def msg_predict(message:discord.Message):
         await message.reply(text, file=file)
 
 ###-----Slash Commands-----###
+@app_commands.choices(
+    model=[app_commands.Choice(name=m, value=str(m).lower()) for m in MODELS]
+)
 @app_commands.describe(
-        img_url='Valid HTTP/S link to a supported image type.',
-        show="Enable/disable showing annotated result image.",
-        conf="Confidence threshold for class predictions.",
-        iou="Intersection over union threshold for detections.",
-        size="Inference image size (single dimension only).",
-        model="One of YOLOv(5|8)(n|s|m|l|x) models to use for inference."
+    img_url='Valid HTTP/S link to a supported image type.',
+    show="Enable/disable showing annotated result image.",
+    conf="Confidence threshold for class predictions.",
+    iou="Intersection over union threshold for detections.",
+    size="Inference image size (single dimension only).",
+    model="One of YOLOv(5|8)(n|s|m|l|x) models to use for inference."
 )
 async def im_predict(interaction:discord.Interaction,
-                         img_url:str,
-                         show:bool=True,
-                         conf:LIMITS['conf']=0.35,
-                         iou:LIMITS['iou']=0.45,
-                         size:LIMITS['size']=640,
-                         model:str='yolov8n',
-                         ):
+        img_url:str,
+        show:bool=True,
+        conf:LIMITS['conf']=0.35, # type: ignore
+        iou:LIMITS['iou']=0.45, # type: ignore
+        size:LIMITS['size']=640, # type: ignore
+        model:app_commands.Choice[str]='yolov8n',
+        ):
         await interaction.response.defer(thinking=True) # permits longer response time
         
-        model = model_chk(model)
+        model = model_chk(model.value)
         image = ReqImage(img_url)
         # infer_im, infer_data, infer_ratio = image.inference_img(int(size))
         if not image.image_error:
@@ -140,7 +162,14 @@ async def im_predict(interaction:discord.Interaction,
             try:
             # if not image.image_error:
                 infer_im, infer_data, infer_ratio = image.inference_img(int(size))
-                req = inference_req(infer_data, req2=REQ_ENDPOINT, confidence=str(conf), iou=str(iou), size=str(size), model=str(model))
+                req = inference_req(
+                    infer_data,
+                    req2=REQ_ENDPOINT.replace("yolov8n", model.lower()),
+                    confidence=str(conf),
+                    iou=str(iou),
+                    size=str(size),
+                    model=str(model)
+                    )
                 req.raise_for_status()
                 if req.status_code != 200: # Catch all other non-good return codes and make sure to reply
                     Loggr.debug(f"{API_ERR_MSG.format(req.status_code, req.reason)}")
@@ -148,7 +177,15 @@ async def im_predict(interaction:discord.Interaction,
                 
                 else:
                     Reply = ResponseMsg(req, show, True, infer_ratio)
-                    file, text = Reply.start_msg(partial(process_result, img=infer_im, plot=show, class_pad=Reply.cls_pad), infer_ratio=infer_ratio)
+                    file, text = Reply.start_msg(
+                        partial(
+                            process_result, # NOTE will need to update for all model tasks
+                            img=infer_im,
+                            plot=show,
+                            class_pad=Reply.cls_pad
+                            ),
+                        infer_ratio=infer_ratio
+                        )
                     file = attach_file(file) if show else None
         
             except requests.HTTPError as e:
