@@ -172,7 +172,8 @@ def docs_choices(to_file:bool=False) -> tuple[dict, dict]|None:
     # REFERENCE https://docs.python.org/3.9/library/subprocess.html#subprocess.CalledProcessError
 
     # Read MKDOCS index
-    docs_idx = [f for f in [(into_path / DOCS_DIR / DOCS_IDX).with_suffix(y) for y in YAML_EXT] if f.exists()]
+    # docs_idx = [f for f in [(into_path / DOCS_DIR / DOCS_IDX).with_suffix(y) for y in YAML_EXT] if f.exists()]
+    docs_idx = [f for f in [(into_path / DOCS_IDX).with_suffix(y) for y in YAML_EXT] if f.exists()]
     Loggr.info(f"Searching for documentation index file in {into_path.as_posix()}")
     assert any(docs_idx), f"Unable to locate mkdocs index file in {into_path.as_posix()} repo directory."
     
