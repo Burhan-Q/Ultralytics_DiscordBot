@@ -19,32 +19,31 @@ from discord import app_commands
 
 from UltralyticsBot import BOT_ID, REPO_DIR
 from UltralyticsBot.utils.logging import Loggr
+from UltralyticsBot.utils.config import (
+    DOCS_CFG,
+    DOCS_URL,
+    GH_REPO,
+    ULTRA_LICENSING,
+    LICENSE,
+    DOCS_DIR,
+    DOCS_LOC,
+    DOCS_IDX,
+    YAML_EXT,
+    BRAND,
+    LOGO_ICON,
+    INTGR8_BANNER,
+    BGRD_LOGO,
+    FULL_LOGO,
+    YOLO_LOGO,
+    CATEGORIES,
+    ALL_CAPS,
+)
 
 MD_LINK_RGX = r"\#+\W\[\w+\]\((h|H)ttp(s)?://.*\)" # For headers specifically
 YOLOvN_RGX = r'(yolo)(v)?\d?' # include re.IGNORECASE
 YOLO_RGX = r'(yolo)'
 
-DOCS_URL = "https://docs.ultralytics.com/"
-GH_REPO = "https://github.com/ultralytics/ultralytics.git"
-ULTRA_LICENSING = "https://www.ultralytics.com/license"
-LICENSE = "AGPL-3.0"
-
-DOCS_DIR = "docs"
-DOCS_LOC = "en" # english locale
-DOCS_IDX = "mkdocs" # mkdocs.yml
-YAML_EXT = ['.yaml', '.yml']
 LOCAL_DOCS = REPO_DIR if any(REPO_DIR) else "repo_data" # Directory name for local documentation files
-BRAND = {'hub':'HUB', 'yolo':'YOLO', 'ultralytics':'Ultralytics'}
-
-LOGO_ICON = "https://raw.githubusercontent.com/ultralytics/assets/main/logo/Ultralytics-logomark-color.png"
-INTGR8_BANNER = "https://raw.githubusercontent.com/ultralytics/assets/main/yolov8/banner-integrations.png"
-BGRD_LOGO = "https://raw.githubusercontent.com/ultralytics/assets/main/im/banner-ultralytics-github.png"
-# FULL_LOGO = "https://raw.githubusercontent.com/ultralytics/assets/main/logo/Ultralytics-logotype-color.png"
-FULL_LOGO = "https://github.com/Burhan-Q/Ultralytics_DiscordBot/assets/62214284/ec6ef857-72b1-407b-b078-b2c3e8e34df0"
-YOLO_LOGO = "https://raw.githubusercontent.com/ultralytics/assets/main/logo/discord/emote-Ultralytics_YOLO_Logomark.png"
-
-CATEGORIES = ['Modes', 'Tasks', 'Models', 'Datasets', 'Guides', 'YOLOv5', 'HUB', 'Integrations', 'Help'] # 'NEW 🚀 Explorer'
-ALL_CAPS = ['YOLO', 'CLI', 'JSON', 'YAML', 'HUB', 'API', 'URL', 'OBB', 'TCP', 'RTSP', 'ONNX', 'TF.JS', 'TF', 'NCNN', 'CNN', 'COCO']
 
 def brand_format(text:str) -> str:
     """Ensures correct text formatting of Ultralytics Branding."""
@@ -54,16 +53,19 @@ def brand_format(text:str) -> str:
         txt_out = txt_out.replace(text[w[0]:w[1]], BRAND[text[w[0]:w[1]].lower()])
     return txt_out
 
+
 def allcapwords(text:str) -> str:
     """Converts words that should be shown with all caps from title-case to all-caps."""
     for a in ALL_CAPS:
         text = text.replace(a.title(), a)
     return text
 
+
 def md_index_2link(mdtxt:str, base_link:str=DOCS_URL) -> str:
     """Constructs links from markdown header sections and base URL string."""
     base_link = base_link if base_link.endswith('/') else base_link + '/'
     return base_link + '#' + ''.join([c for c in mdtxt.strip('# ').lower() if c not in string.punctuation]).replace(' ','-')
+
 
 def delist_dict(in_obj:list, out:dict=None) -> dict:
     """Creates nested dictionaries if dictionaries contain list of dictionaries."""
@@ -77,18 +79,22 @@ def delist_dict(in_obj:list, out:dict=None) -> dict:
             out.update({k:delist_dict(v)} if isinstance(v, list) else {k:v})
     return out
 
+
 def get_subcat_files(cat_path:Path) -> list[Path]:
     """Fetch sub-category doc-files, these are expected to be found at a depth of one (1)."""
     return [f for f in cat_path.rglob("*.md") if f.stem != 'index']
+
 
 def get_dataset_files(ds_path:Path) -> list[Path]:
     """Fetch Dataset doc-files, these are nested inside directories and should be `index.md` files."""
     tasks = [p for p in ds_path.iterdir() if p.is_dir()]
     return [next(task.glob("index.md")) for task in tasks]
 
+
 def no_header_links(md_header:str) -> str:
     """Removes Markdown Header links and only returns header text."""
     return md_header.split(']')[0].replace('[', '') if re.search(MD_LINK_RGX, md_header) else md_header
+
 
 def fetch_sitemap(sitemap_url:str="http://docs.ultralytics.com/sitemap.xml") -> list[str]:
     """Fetches and parses the sitemap XML, returning a list of URLs."""
@@ -104,12 +110,14 @@ def fetch_sitemap(sitemap_url:str="http://docs.ultralytics.com/sitemap.xml") -> 
         Loggr.error(f"Error fetching sitemap: {e}")
         return []
 
+
 def get_md_headers(md_content:list) -> list[str]:
     """Gets Markdown headers text, ignoring code-block comment lines"""
     headers = {k:v for k,v in enumerate(md_content) if v.startswith('#')}
     codeblcks = [k for k,v in enumerate(md_content) if v.startswith('```')]
     code_idx = list(zip(codeblcks[::2],codeblcks[1::2]))
     return [no_header_links(ht) for h,ht in headers.items() if not any([c[0] < h < c[1] for c in code_idx])]
+
 
 def fetch_gh_docs(repo:str=GH_REPO, local_docs:str=LOCAL_DOCS) -> tuple[Path, subprocess.CompletedProcess]:
     """Fetch docs from repo; defaults are Ultralytics Repo and `Path.home() / repo_data` respectively."""
@@ -126,6 +134,7 @@ def fetch_gh_docs(repo:str=GH_REPO, local_docs:str=LOCAL_DOCS) -> tuple[Path, su
     proc_run = subprocess.call(cmd, cwd=save_path.as_posix(), text=True) # blocking
     save_path = save_path / repo_name if save_path.name != repo_name else save_path # update for output
     return save_path, proc_run
+
 
 def yaml_2_embeds(file:str|Path) -> tuple[dict,dict]:
     """Reads YAML file and generates `discord.Embeds` and `discord.app_choices.Choice` objects. Output order is `choices, embeds` both as dictionaries. If YAML file doesn't have correct name, will raise a generic `Exception`."""
@@ -148,6 +157,7 @@ def yaml_2_embeds(file:str|Path) -> tuple[dict,dict]:
     elif category is None:
         raise Exception(f"No Docs category named matching {file.as_posix()}")
 
+
 def load_docs_cache(docs_path:Path=(Path.home() / LOCAL_DOCS)) -> tuple[dict,dict]:
     """Loads data from the path where local repo is cloned and assumes YAML cache has been created."""
     choices, embeds = {c:{} for c in CATEGORIES}, {c:{} for c in CATEGORIES}
@@ -157,6 +167,7 @@ def load_docs_cache(docs_path:Path=(Path.home() / LOCAL_DOCS)) -> tuple[dict,dic
         _ = embeds.update(o_e)
         
     return choices, embeds
+
 
 def docs_choices(to_file:bool=False) -> tuple[dict, dict]|None:
     """Fetches data from repo and crawls the Docs files for generating links to pages+sections of the Docs as Discord Embeds. First dictionary are the `discord.app_command.Choices` and the second include the `discord.Embed` objects."""
