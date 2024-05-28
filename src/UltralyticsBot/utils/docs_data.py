@@ -9,6 +9,7 @@ import re
 import string
 import subprocess
 from pathlib import Path
+import xml.etree.ElementTree as ET
 # from typing import Any, Coroutine
 
 import yaml
@@ -89,26 +90,19 @@ def no_header_links(md_header:str) -> str:
     """Removes Markdown Header links and only returns header text."""
     return md_header.split(']')[0].replace('[', '') if re.search(MD_LINK_RGX, md_header) else md_header
 
-# def fetch_robots(url:str="https://docs.ultralytics.com/", loc:str="robots.txt"):
-    
-#     req = requests.get(url=(url + loc))
-#     if req.ok and req.status_code == 200:
-#         data = req.content.decode("utf-8")
-#     else:
-#         raise requests.RequestException(f"Whoa! problem with fetching {url + loc}")
-#     robot_d = dict()
-#     lines = [l.split(": ") for l in data.splitlines()]
-#     lines = [v for l in data.splitlines() for v in l]
-#     for l in lines:
-#         k,v = l.split(": ")
-#         if k not in robot_d:
-#             robot_d.update({k:v})
-#         elif k in robot_d:
-#             existing = robot_d.get(k)
-#             robot_d[k] = [*existing, v] if isinstance(existing, list) else [existing, v]
-#     smap = (robot_d.get("Sitemap") or robot_d.get("sitemap"))
-#     smap = [sm for sm in smap if sm == (url + 'sitemap.xml')] if isinstance(smap, list) and len(smap) > 1 else smap
-#     ... # TODO finish
+def fetch_sitemap(sitemap_url:str="http://docs.ultralytics.com/sitemap.xml") -> list[str]:
+    """Fetches and parses the sitemap XML, returning a list of URLs."""
+    try:
+        response = requests.get(sitemap_url)
+        response.raise_for_status()  # Check that the request was successful
+        sitemap_xml = response.content
+        root = ET.fromstring(sitemap_xml)
+        namespace = {'sitemap': 'http://www.sitemaps.org/schemas/sitemap/0.9'}
+        urls = [url.text for url in root.findall("sitemap:url/sitemap:loc", namespace)]
+        return urls
+    except requests.RequestException as e:
+        Loggr.error(f"Error fetching sitemap: {e}")
+        return []
 
 def get_md_headers(md_content:list) -> list[str]:
     """Gets Markdown headers text, ignoring code-block comment lines"""
