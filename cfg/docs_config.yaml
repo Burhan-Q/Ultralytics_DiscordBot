@@ -34,7 +34,12 @@ CATEGORIES:
   - Help
   - Usage
   - Quickstart
+  - Real-World Projects
+  - Tutorials
   #- 'NEW 🚀 Explorer'
+
+IGNORE:
+  - Reference
 
 ALL_CAPS: 
   - YOLO
