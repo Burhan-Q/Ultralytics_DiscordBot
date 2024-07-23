@@ -158,6 +158,7 @@ def yaml_2_embeds(file:str|Path) -> tuple[dict,dict]:
     elif category is None:
         # report error but continue running
         Loggr.warn(f"No Docs category named matching {file.as_posix()}")
+        return {}, {}
 
 
 def load_docs_cache(docs_path:Path=(Path.home() / LOCAL_DOCS)) -> tuple[dict,dict]:
@@ -165,8 +166,9 @@ def load_docs_cache(docs_path:Path=(Path.home() / LOCAL_DOCS)) -> tuple[dict,dic
     choices, embeds = {c:{} for c in CATEGORIES}, {c:{} for c in CATEGORIES}
     for yfile in docs_path.glob("*.yaml"):
         o_c, o_e = yaml_2_embeds(yfile)
-        _ = choices.update(o_c)
-        _ = embeds.update(o_e)
+        if any(o_c) and any(o_e):
+            _ = choices.update(o_c)
+            _ = embeds.update(o_e)
         
     return choices, embeds
 
