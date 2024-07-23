@@ -11,7 +11,7 @@ from discord import app_commands
 from UltralyticsBot import BOT_TOKEN, OWNER_ID, DEV_GUILD, BOT_ID
 from UltralyticsBot.cmds.client import MyClient
 from UltralyticsBot.cmds.actions import msg_predict, im_predict, chng_status, ACTIVITIES, about, commands, help, slash_example, msgexample, fetch_embed
-from UltralyticsBot.utils.logging import Loggr
+from UltralyticsBot.utils.loggering import Loggr
 from UltralyticsBot.utils.msgs import NOT_OWNER, NEWLINE, get_args
 from UltralyticsBot.utils.docs_data import docs_choices
 

@@ -12,7 +12,7 @@ from discord import app_commands
 from discord.ext import tasks
 
 from UltralyticsBot import CMDS, DEV_CH
-from UltralyticsBot.utils.logging import Loggr
+from UltralyticsBot.utils.loggering import Loggr
 from UltralyticsBot.utils.docs_data import docs_choices, load_docs_cache
 
 RUN_AT = datetime.time(hour=0, minute=0, second=0, tzinfo=datetime.timezone.utc) # time to refresh repo and docs

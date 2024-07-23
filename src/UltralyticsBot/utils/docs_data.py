@@ -19,7 +19,7 @@ import requests
 from discord import app_commands
 
 from UltralyticsBot import BOT_ID, REPO_DIR
-from UltralyticsBot.utils.logging import Loggr
+from UltralyticsBot.utils.loggering import Loggr
 from UltralyticsBot.utils.config import (
     DOCS_CFG,
     DOCS_URL,

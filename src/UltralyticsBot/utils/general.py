@@ -15,7 +15,7 @@ import numpy as np
 import discord
 
 # from UltralyticsBot import BOT_ID
-from UltralyticsBot.utils.logging import Loggr
+from UltralyticsBot.utils.loggering import Loggr
 from UltralyticsBot.utils.checks import is_img_link, is_link #, URL_RGX
 
 TEMPFILE = 'detect_result' # fallback

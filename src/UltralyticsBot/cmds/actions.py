@@ -15,7 +15,7 @@ import numpy as np
 from discord import app_commands
 
 from UltralyticsBot import REQ_LIM, REQ_ENDPOINT, CMDS, RESPONSE_KEYS, HUB_KEY, DEFAULT_INFER, BOT_ID, OWNER_ID, GH, MODELS
-from UltralyticsBot.utils.logging import Loggr
+from UltralyticsBot.utils.loggering import Loggr
 from UltralyticsBot.cmds.client import MyClient
 from UltralyticsBot.utils.checks import model_chk
 from UltralyticsBot.utils.general import ReqImage, attach_file, files_age
