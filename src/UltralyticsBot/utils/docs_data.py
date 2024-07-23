@@ -205,6 +205,7 @@ def yolov5_tutorials(d:dict) -> dict:
 
 def docs_choices(to_file:bool=False) -> tuple[dict, dict]|None:
     """Fetches data from repo and crawls the Docs files for generating links to pages+sections of the Docs as Discord Embeds. First dictionary are the `discord.app_command.Choices` and the second include the `discord.Embed` objects."""
+    global CATEGORIES
     Loggr.info(f"Fetching data from {GH_REPO} for documentation.")
     into_path, run_result = fetch_gh_docs()
     urls = fetch_sitemap()
