@@ -156,7 +156,8 @@ def yaml_2_embeds(file:str|Path) -> tuple[dict,dict]:
         return opts, embeds_out
     
     elif category is None:
-        raise Exception(f"No Docs category named matching {file.as_posix()}")
+        # report error but continue running
+        Loggr.warn(f"No Docs category named matching {file.as_posix()}")
 
 
 def load_docs_cache(docs_path:Path=(Path.home() / LOCAL_DOCS)) -> tuple[dict,dict]:
