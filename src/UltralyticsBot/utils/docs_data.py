@@ -235,7 +235,7 @@ def docs_choices(to_file:bool=False) -> tuple[dict, dict]|None:
             category_path = (into_path / DOCS_DIR / DOCS_LOC / k.lower())
             files = get_subcat_files(category_path) if k.lower() != 'datasets' else get_dataset_files(category_path)
             
-            for f in files:
+            for f in files[:25]:  # limit to 25 entries (max for choices)
                 SUB_CAT = f.as_posix().partition(k.lower())[-1].replace('.md','')
                 SUB_CAT = '/' + [s for s in SUB_CAT.split('/') if s != ''][0] # formatting
                 base_URL = DOCS_URL + k.lower() + SUB_CAT.lower()
@@ -244,7 +244,7 @@ def docs_choices(to_file:bool=False) -> tuple[dict, dict]|None:
                 if brand_format(SUB_CAT.strip(string.punctuation).capitalize()) not in options[k]:
                     # Get subsections
                     TITLE, *TOC = get_md_headers(f.read_text('utf-8').splitlines())
-                    stop = min(25, TOC.index("## FAQ")) if "## FAQ" in TOC else 25  # avoid FAQ section, limit to 25 entries (max for embeds)
+                    stop = TOC.index("## FAQ") if "## FAQ" in TOC else None  # avoid FAQ section
                     TOC = TOC[:stop]
                     TITLE = brand_format(TITLE.strip('# '))
                     
