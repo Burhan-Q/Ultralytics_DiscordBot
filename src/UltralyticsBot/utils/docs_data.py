@@ -244,7 +244,7 @@ def docs_choices(to_file:bool=False) -> tuple[dict, dict]|None:
                 if brand_format(SUB_CAT.strip(string.punctuation).capitalize()) not in options[k]:
                     # Get subsections
                     TITLE, *TOC = get_md_headers(f.read_text('utf-8').splitlines())
-                    stop = min(25, TOC.index("## FAQ"))  # avoid FAQ section, limit to 25 entries (max for embeds)
+                    stop = min(25, TOC.index("## FAQ")) if "## FAQ" in TOC else 25  # avoid FAQ section, limit to 25 entries (max for embeds)
                     TOC = TOC[:stop]
                     TITLE = brand_format(TITLE.strip('# '))
                     
