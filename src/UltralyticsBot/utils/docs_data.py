@@ -9,6 +9,7 @@ import re
 import string
 import subprocess
 from pathlib import Path
+from urllib.parse import urlparse
 import xml.etree.ElementTree as ET
 # from typing import Any, Coroutine
 
@@ -37,11 +38,12 @@ from UltralyticsBot.utils.config import (
     YOLO_LOGO,
     CATEGORIES,
     ALL_CAPS,
+    IGNORE,
 )
 
-MD_LINK_RGX = r"\#+\W\[\w+\]\((h|H)ttp(s)?://.*\)" # For headers specifically
-YOLOvN_RGX = r'(yolo)(v)?\d?' # include re.IGNORECASE
-YOLO_RGX = r'(yolo)'
+MD_LINK_RGX = re.compile("\#+\W\[\w+\]\((h|H)ttp(s)?://.*\)") # For headers specifically
+YOLOvN_RGX = re.compile('(yolo)(v)?\d?') # include re.IGNORECASE
+YOLO_RGX = re.compile('(yolo)')
 
 LOCAL_DOCS = REPO_DIR if any(REPO_DIR) else "repo_data" # Directory name for local documentation files
 
@@ -98,17 +100,17 @@ def no_header_links(md_header:str) -> str:
 
 def fetch_sitemap(sitemap_url:str="http://docs.ultralytics.com/sitemap.xml") -> list[str]:
     """Fetches and parses the sitemap XML, returning a list of URLs."""
+    web_urls = []
     try:
         response = requests.get(sitemap_url)
         response.raise_for_status()  # Check that the request was successful
         sitemap_xml = response.content
         root = ET.fromstring(sitemap_xml)
         namespace = {'sitemap': 'http://www.sitemaps.org/schemas/sitemap/0.9'}
-        urls = [url.text for url in root.findall("sitemap:url/sitemap:loc", namespace)]
-        return urls
+        web_urls = [url.text for url in root.findall("sitemap:url/sitemap:loc", namespace)]
     except requests.RequestException as e:
         Loggr.error(f"Error fetching sitemap: {e}")
-        return []
+    return web_urls
 
 
 def get_md_headers(md_content:list) -> list[str]:
@@ -130,7 +132,6 @@ def fetch_gh_docs(repo:str=GH_REPO, local_docs:str=LOCAL_DOCS) -> tuple[Path, su
         save_path = save_path / repo_name
     else:
         cmd = ['git', 'clone', repo]
-    # proc_run = subprocess.run(cmd, cwd=save_path, capture_output=True, text=True) # "Cloning into 'ultralytics'...\n", from `.stderr`, not certain how to capture more; `returncode == 0` should be successful
     proc_run = subprocess.call(cmd, cwd=save_path.as_posix(), text=True) # blocking
     save_path = save_path / repo_name if save_path.name != repo_name else save_path # update for output
     return save_path, proc_run
@@ -169,10 +170,45 @@ def load_docs_cache(docs_path:Path=(Path.home() / LOCAL_DOCS)) -> tuple[dict,dic
     return choices, embeds
 
 
+def sub_guides(d:dict) -> dict:
+    """Extract Tutorial and Guides under the primary Guides key."""
+    keep = {}
+    for k,v in d.items():
+        if k.lower() in ["guides", "real-world projects", "tutorials",]:
+            keep.update(**v)
+        elif k.lower() in ["yolov5"]:
+            keep.update(**v["Tutorials"])
+    return keep
+
+
+def top_level(all_urls:list[str]) -> set[str]:
+    """Returns the top level of all URLs."""
+    ignore = set([e.lower() for e in IGNORE])
+    return set([urlparse(url).path.split('/')[1] for url in all_urls]).difference(ignore)
+
+
+def walk_path(path:Path) -> dict[str,Path]:
+    """Walks the path and returns all files and directories."""
+    paths = {}
+    for f in path.iterdir():
+        if f.is_dir():
+            paths.update(walk_path(f))
+        else:
+            paths.update({f.parent.name:[f]}) if not paths.get(f.parent.name) else paths.get(f.parent.name).append(f)
+    return paths
+
+
+def yolov5_tutorials(d:dict) -> dict:
+    """Extract YOLOv5 Tutorials from the dictionary."""
+    return d.get("YOLOv5").get("Tutorials")
+
+
 def docs_choices(to_file:bool=False) -> tuple[dict, dict]|None:
     """Fetches data from repo and crawls the Docs files for generating links to pages+sections of the Docs as Discord Embeds. First dictionary are the `discord.app_command.Choices` and the second include the `discord.Embed` objects."""
     Loggr.info(f"Fetching data from {GH_REPO} for documentation.")
     into_path, run_result = fetch_gh_docs()
+    urls = fetch_sitemap()
+    CATEGORIES = ({brand_format(t.capitalize()) for t in top_level(urls)} | set(CATEGORIES)) - set(IGNORE)
     #TODO raise run_result.check_returncode() # Raises CalledProcessError
     # REFERENCE https://docs.python.org/3.9/library/subprocess.html#subprocess.CalledProcessError
 
@@ -187,6 +223,7 @@ def docs_choices(to_file:bool=False) -> tuple[dict, dict]|None:
     
     docs_layout = yaml.safe_load('\n'.join(text_data))['nav'] # list
     docs = delist_dict(docs_layout)
+    _ = [docs.update({k:docs.get("Guides").pop(k)}) for k in {"YOLOv5", "Tutorials"} if docs.get("Guides").get(k) is not None]
     Loggr.info(f"Documentation sections found are: {[k for k in docs]} and kept only {CATEGORIES} for populating commands.")
     
     # Try using custom embeds instead
@@ -207,6 +244,8 @@ def docs_choices(to_file:bool=False) -> tuple[dict, dict]|None:
                 if brand_format(SUB_CAT.strip(string.punctuation).capitalize()) not in options[k]:
                     # Get subsections
                     TITLE, *TOC = get_md_headers(f.read_text('utf-8').splitlines())
+                    stop = min(25, TOC.index("## FAQ"))  # avoid FAQ section, limit to 25 entries (max for embeds)
+                    TOC = TOC[:stop]
                     TITLE = brand_format(TITLE.strip('# '))
                     
                     embed = discord.Embed(title=TITLE,
@@ -229,7 +268,7 @@ def docs_choices(to_file:bool=False) -> tuple[dict, dict]|None:
     if to_file:
         for k,v in options.items():
             embeds_file = into_path.parent / f'{k}.yaml'
-            _ = embeds_file.write_text(yaml.safe_dump({kk:vv.to_dict() for kk,vv in v.items()}, allow_unicode=True),encoding='utf-8')
+            _ = embeds_file.write_text(yaml.safe_dump({kk:vv.to_dict() for kk,vv in v.items()}, allow_unicode=True), encoding='utf-8')
     
     # Generate dictionary for use with app_commands.choices
     else:
